@@ -274,7 +274,7 @@ export const usePointsStore = create<PointsState>()(
 
                     const updatedEarned = {
                         ...dailyPoints.earned,
-                        [category]: dailyPoints.earned[category] + amount,
+                        [category]: (dailyPoints.earned[category] || 0) + amount,
                     };
 
                     const totalEarned = Object.values(updatedEarned).reduce((sum, val) => sum + val, 0);
