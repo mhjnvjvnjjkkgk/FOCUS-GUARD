@@ -1067,8 +1067,14 @@ function NeoSessionCard({ session, delay = 0 }: NeoSessionCardProps) {
                     </View>
                     <View style={styles.neoSessionStatItem}>
                         <Text style={styles.neoSessionStatLabel}>💎 EARNED</Text>
-                        <Text style={[styles.neoSessionStatValue, { color: NEO.colors.purple }]}>
+                        <Text style={[styles.neoSessionStatValue, { color: NEO.colors.green }]}>
                             +{session.pointsEarned} PTS
+                        </Text>
+                    </View>
+                    <View style={styles.neoSessionStatItem}>
+                        <Text style={styles.neoSessionStatLabel}>⚠️ DEDUCTED</Text>
+                        <Text style={[styles.neoSessionStatValue, { color: NEO.colors.red }]}>
+                            {session.wasAbandoned || session.completionRate < 25 ? '-30' : '0'} PTS
                         </Text>
                     </View>
                 </View>
