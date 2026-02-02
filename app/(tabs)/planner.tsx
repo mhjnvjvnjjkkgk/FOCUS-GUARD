@@ -455,7 +455,16 @@ export default function PlannerScreen() {
                                     <Text style={styles.timeBlockArrow}>→</Text>
                                     <Text style={styles.timeBlockText}>
                                         {(() => {
-                                            const totalDuration = task.sessions.reduce((sum, s) => sum + s.duration, 0);
+                                            // Calculate total duration from all sessions, handle empty/undefined
+                                            const totalDuration = task.sessions && task.sessions.length > 0
+                                                ? task.sessions.reduce((sum, s) => sum + (s.duration || 0), 0)
+                                                : 0;
+
+                                            // If no sessions or zero duration, show dash
+                                            if (totalDuration === 0) {
+                                                return '—';
+                                            }
+
                                             const endTime = calculateEndTime(task.startTime.hour, task.startTime.minute, totalDuration);
                                             return formatTime(endTime.hour, endTime.minute);
                                         })()}
