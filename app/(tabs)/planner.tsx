@@ -291,7 +291,7 @@ export default function PlannerScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         const isBreak = task.name.toLowerCase().includes('break') || task.name.toLowerCase().includes('lunch');
-        const currentDuration = task.sessions.length > 0 ? task.sessions[0].duration : 30;
+        const currentDuration = task.focusConfig?.sessionDuration || 30;
 
         if (isBreak) {
             // For breaks, show simple duration edit
@@ -455,12 +455,16 @@ export default function PlannerScreen() {
                                     <Text style={styles.timeBlockArrow}>→</Text>
                                     <Text style={styles.timeBlockText}>
                                         {(() => {
-                                            // Calculate total duration from all sessions, handle empty/undefined
-                                            const totalDuration = task.sessions && task.sessions.length > 0
-                                                ? task.sessions.reduce((sum, s) => sum + (s.duration || 0), 0)
+                                            // Calculate total duration from focusConfig
+                                            const sessionCount = task.focusConfig?.sessionCount || 1;
+                                            const sessionDuration = task.focusConfig?.sessionDuration || 25;
+                                            const breakDuration = task.focusConfig?.breakDuration || 5;
+
+                                            const totalDuration = sessionCount > 0
+                                                ? (sessionDuration * sessionCount) + (breakDuration * (sessionCount - 1))
                                                 : 0;
 
-                                            // If no sessions or zero duration, show dash
+                                            // If no duration, show dash
                                             if (totalDuration === 0) {
                                                 return '—';
                                             }
