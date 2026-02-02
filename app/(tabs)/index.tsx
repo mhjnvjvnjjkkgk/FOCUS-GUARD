@@ -222,7 +222,7 @@ export default function AlarmsScreen() {
 
   const handleCreateAlarm = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert('Create Alarm', 'Navigation to alarm creation coming soon!');
+    router.push('/alarm/create');
   };
 
   const handleEditAlarm = (id: string) => {
