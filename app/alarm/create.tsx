@@ -133,29 +133,118 @@ export default function CreateAlarmScreen() {
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+        const selectedRingtone = RINGTONE_OPTIONS.find(o => o.value === ringtone) || RINGTONE_OPTIONS[0];
+
         addAlarm({
             time: { hour, minute },
             label: label.trim(),
             repeatDays,
             enabled: true,
-            sound: ringtone,
+
+            // Sound
+            ringtoneId: ringtone,
+            ringtoneName: selectedRingtone.label,
+            volume,
             vibrate,
+            gradualVolume,
+
+            // Snooze
             snoozeEnabled,
             snoozeDuration,
-            maxSnoozes: snoozeLimit,
-            dismissTasks: challengeType === 'none' ? [] : [{
-                id: challengeType,
+            snoozeLimit, // Matches store interface
+            snoozesUsed: 0,
+
+            // Dismiss
+            dismissTask: {
                 type: challengeType as any,
-                difficulty: difficulty as any,
-                count: problemCount,
-            }],
+                mathDifficulty: difficulty as any,
+                mathCount: problemCount,
+                // Add default values for other types if needed
+                shakeIntensity: 'medium',
+                shakeDuration: 15,
+                walkSteps: 20,
+            },
         });
 
         router.back();
     };
 
+    // Selection Modal State
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalTitle, setModalTitle] = useState('');
+    const [modalOptions, setModalOptions] = useState<{ label: string; value: any; icon?: string }[]>([]);
+    const [onSelectOption, setOnSelectOption] = useState<(value: any) => void>(() => { });
+
+    // Options Lists
+    const SNOOZE_OPTIONS = [5, 10, 15, 20, 30].map(m => ({ label: `${m} min`, value: m, icon: '⏳' }));
+
+    const DIFFICULTY_OPTIONS = [
+        { label: 'Easy', value: 'easy', icon: '🟢' },
+        { label: 'Medium', value: 'medium', icon: '🟡' },
+        { label: 'Hard', value: 'hard', icon: '🔴' },
+    ];
+
+    const CHALLENGE_OPTIONS = [
+        { label: 'None', value: 'none', icon: '🚫' },
+        { label: 'Math', value: 'math', icon: '🧮' },
+        { label: 'Shake', value: 'shake', icon: '📳' },
+        { label: 'Typing', value: 'typing', icon: '⌨️' },
+        { label: 'Walking', value: 'walk', icon: '🚶' },
+        { label: 'Breathing', value: 'breathing', icon: '🧘' },
+        { label: 'Memory', value: 'memory', icon: '🧠' },
+        { label: 'Squat', value: 'squat', icon: '🏋️' },
+        { label: 'Step', value: 'step', icon: '👣' },
+    ];
+
+    const RINGTONE_OPTIONS = [
+        { label: 'Classic Alarm', value: 'classic', icon: '🔔' },
+        { label: 'Digital Beep', value: 'digital', icon: '📟' },
+        { label: 'Gentle Rise', value: 'gentle', icon: '🌅' },
+        { label: 'Energize', value: 'energy', icon: '⚡' },
+    ];
+
+    // Helper to open modal
+    const openSelection = (title: string, options: any[], onSelect: (val: any) => void) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setModalTitle(title);
+        setModalOptions(options);
+        setOnSelectOption(() => (val: any) => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onSelect(val);
+            setModalVisible(false);
+        });
+        setModalVisible(true);
+    };
+
     return (
         <View style={styles.container}>
+            {/* Selection Modal */}
+            {modalVisible && (
+                <View style={styles.modalOverlay}>
+                    <Pressable style={styles.modalBackdrop} onPress={() => setModalVisible(false)} />
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{modalTitle}</Text>
+                            <Pressable onPress={() => setModalVisible(false)}>
+                                <Text style={styles.modalClose}>✕</Text>
+                            </Pressable>
+                        </View>
+                        <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+                            {modalOptions.map((opt, index) => (
+                                <Pressable
+                                    key={index}
+                                    style={styles.modalItem}
+                                    onPress={() => onSelectOption(opt.value)}
+                                >
+                                    <Text style={styles.modalItemIcon}>{opt.icon}</Text>
+                                    <Text style={styles.modalItemText}>{opt.label}</Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+            )}
+
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
@@ -258,9 +347,14 @@ export default function CreateAlarmScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionLabel}>SOUND & VIBRATION</Text>
 
-                    <Pressable style={styles.dropdown}>
+                    <Pressable
+                        style={styles.dropdown}
+                        onPress={() => openSelection('SELECT RINGTONE', RINGTONE_OPTIONS, setRingtone)}
+                    >
                         <Text style={styles.dropdownIcon}>🔔</Text>
-                        <Text style={styles.dropdownText}>Classic Alarm</Text>
+                        <Text style={styles.dropdownText}>
+                            {RINGTONE_OPTIONS.find(o => o.value === ringtone)?.label || 'Classic Alarm'}
+                        </Text>
                         <Ionicons name="chevron-down" size={16} color="black" />
                     </Pressable>
 
@@ -301,7 +395,10 @@ export default function CreateAlarmScreen() {
 
                     {snoozeEnabled && (
                         <>
-                            <Pressable style={styles.dropdown}>
+                            <Pressable
+                                style={styles.dropdown}
+                                onPress={() => openSelection('SNOOZE DURATION', SNOOZE_OPTIONS, setSnoozeDuration)}
+                            >
                                 <Text style={styles.dropdownIcon}>⏳</Text>
                                 <Text style={styles.dropdownText}>{snoozeDuration} min</Text>
                                 <Ionicons name="chevron-down" size={16} color="black" />
@@ -338,42 +435,58 @@ export default function CreateAlarmScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionLabel}>DISMISSAL CHALLENGE</Text>
 
-                    <Pressable style={styles.dropdown}>
-                        <Text style={styles.dropdownIcon}>🧮</Text>
-                        <Text style={styles.dropdownText}>Math</Text>
+                    <Pressable
+                        style={styles.dropdown}
+                        onPress={() => openSelection('SELECT CHALLENGE', CHALLENGE_OPTIONS, setChallengeType)}
+                    >
+                        <Text style={styles.dropdownIcon}>
+                            {CHALLENGE_OPTIONS.find(o => o.value === challengeType)?.icon || '🧮'}
+                        </Text>
+                        <Text style={styles.dropdownText}>
+                            {CHALLENGE_OPTIONS.find(o => o.value === challengeType)?.label || 'Math'}
+                        </Text>
                         <Ionicons name="chevron-down" size={16} color="black" />
                     </Pressable>
 
-                    <Text style={styles.subsectionLabel}>MATH TASK SETTINGS</Text>
+                    {challengeType !== 'none' && (
+                        <>
+                            <Text style={styles.subsectionLabel}>TASK SETTINGS</Text>
 
-                    <Pressable style={styles.dropdown}>
-                        <Text style={styles.dropdownText}>Difficulty: {difficulty}</Text>
-                        <Ionicons name="chevron-down" size={16} color="black" />
-                    </Pressable>
+                            <Pressable
+                                style={styles.dropdown}
+                                onPress={() => openSelection('DIFFICULTY', DIFFICULTY_OPTIONS, setDifficulty)}
+                            >
+                                <Text style={styles.dropdownText}>
+                                    Difficulty: {DIFFICULTY_OPTIONS.find(o => o.value === difficulty)?.label || 'Medium'}
+                                </Text>
+                                <Ionicons name="chevron-down" size={16} color="black" />
+                            </Pressable>
 
-                    <View style={styles.stepper}>
-                        <Pressable
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setProblemCount(Math.max(1, problemCount - 1));
-                            }}
-                            style={styles.stepperBtn}
-                        >
-                            <Text style={styles.stepperBtnText}>−</Text>
-                        </Pressable>
-                        <View style={styles.stepperValue}>
-                            <Text style={styles.stepperValueText}>Problem Count: {problemCount}</Text>
-                        </View>
-                        <Pressable
-                            onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                setProblemCount(Math.min(10, problemCount + 1));
-                            }}
-                            style={styles.stepperBtn}
-                        >
-                            <Text style={styles.stepperBtnText}>+</Text>
-                        </Pressable>
-                    </View>
+                            <View style={styles.stepper}>
+                                <Pressable
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setProblemCount(Math.max(1, problemCount - 1));
+                                    }}
+                                    style={styles.stepperBtn}
+                                >
+                                    <Text style={styles.stepperBtnText}>−</Text>
+                                </Pressable>
+                                <View style={styles.stepperValue}>
+                                    <Text style={styles.stepperValueText}>Count: {problemCount}</Text>
+                                </View>
+                                <Pressable
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setProblemCount(Math.min(10, problemCount + 1));
+                                    }}
+                                    style={styles.stepperBtn}
+                                >
+                                    <Text style={styles.stepperBtnText}>+</Text>
+                                </Pressable>
+                            </View>
+                        </>
+                    )}
                 </View>
 
                 <View style={{ height: 100 }} />
@@ -392,6 +505,76 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: NEO.colors.white,
+    },
+    // Modal Styles
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalBackdrop: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        width: '80%',
+        maxHeight: '70%',
+        backgroundColor: NEO.colors.white,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: 8, height: 8 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 10,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.cyan,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: NEO.colors.black,
+        letterSpacing: 1,
+    },
+    modalClose: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: NEO.colors.black,
+    },
+    modalList: {
+        padding: 8,
+    },
+    modalItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 2,
+        borderColor: '#EEEEEE',
+    },
+    modalItemIcon: {
+        fontSize: 24,
+        marginRight: 12,
+    },
+    modalItemText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: NEO.colors.black,
     },
     scroll: {
         padding: 16,
