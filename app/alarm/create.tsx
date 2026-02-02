@@ -9,7 +9,7 @@ import {
     Switch,
     Alert,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAlarmStore } from '@/store/alarmStore';
@@ -40,18 +40,23 @@ const DAYS = [
 ];
 
 export default function CreateAlarmScreen() {
-    const { addAlarm } = useAlarmStore();
+    const params = useLocalSearchParams<{ id: string }>();
+    const isEditing = !!params.id;
 
-    // Form state
+    // Store actions
+    const { addAlarm, updateAlarm, alarms } = useAlarmStore();
+    const alarmToEdit = alarms.find(a => a.id === params.id);
+
+    // Form state - Initialize with defaults or alarm data
     const [label, setLabel] = useState('');
 
-    // Time state (24-hour internally)
+    // Time state
     const [hour, setHour] = useState(7);
     const [minute, setMinute] = useState(30);
     const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
 
     // Repeat days
-    const [repeatDays, setRepeatDays] = useState<number[]>([1, 2, 3, 4, 5]); // Weekdays default
+    const [repeatDays, setRepeatDays] = useState<number[]>([1, 2, 3, 4, 5]);
 
     // Sound & Vibration
     const [ringtone, setRingtone] = useState('classic');
@@ -68,6 +73,33 @@ export default function CreateAlarmScreen() {
     const [challengeType, setChallengeType] = useState('math');
     const [difficulty, setDifficulty] = useState('medium');
     const [problemCount, setProblemCount] = useState(3);
+
+    // Populate form if editing
+    React.useEffect(() => {
+        if (alarmToEdit) {
+            setLabel(alarmToEdit.label);
+            setHour(alarmToEdit.time.hour);
+            setMinute(alarmToEdit.time.minute);
+            setPeriod(alarmToEdit.time.hour >= 12 ? 'PM' : 'AM');
+            setRepeatDays(alarmToEdit.repeatDays);
+
+            // Sound
+            setRingtone(alarmToEdit.ringtoneId || 'classic');
+            setVolume(alarmToEdit.volume ?? 80);
+            setVibrate(alarmToEdit.vibrate);
+            setGradualVolume(alarmToEdit.gradualVolume);
+
+            // Snooze
+            setSnoozeEnabled(alarmToEdit.snoozeEnabled);
+            setSnoozeDuration(alarmToEdit.snoozeDuration);
+            setSnoozeLimit(alarmToEdit.snoozeLimit);
+
+            // Dismiss
+            setChallengeType(alarmToEdit.dismissTask.type);
+            setDifficulty(alarmToEdit.dismissTask.mathDifficulty || 'medium');
+            setProblemCount(alarmToEdit.dismissTask.mathCount || 3);
+        }
+    }, [alarmToEdit]);
 
     // Convert 12h to 24h
     const to24H = (hour12: number, period: 'AM' | 'PM') => {
@@ -124,8 +156,8 @@ export default function CreateAlarmScreen() {
         }
     };
 
-    // Create alarm
-    const handleCreate = () => {
+    // Create/Update alarm
+    const handleSave = () => {
         if (!label.trim()) {
             Alert.alert('Missing Label', 'Please enter a label for this alarm');
             return;
@@ -135,7 +167,7 @@ export default function CreateAlarmScreen() {
 
         const selectedRingtone = RINGTONE_OPTIONS.find(o => o.value === ringtone) || RINGTONE_OPTIONS[0];
 
-        addAlarm({
+        const alarmData = {
             time: { hour, minute },
             label: label.trim(),
             repeatDays,
@@ -151,7 +183,7 @@ export default function CreateAlarmScreen() {
             // Snooze
             snoozeEnabled,
             snoozeDuration,
-            snoozeLimit, // Matches store interface
+            snoozeLimit,
             snoozesUsed: 0,
 
             // Dismiss
@@ -159,12 +191,17 @@ export default function CreateAlarmScreen() {
                 type: challengeType as any,
                 mathDifficulty: difficulty as any,
                 mathCount: problemCount,
-                // Add default values for other types if needed
                 shakeIntensity: 'medium',
                 shakeDuration: 15,
                 walkSteps: 20,
-            },
-        });
+            } as any,
+        };
+
+        if (isEditing && params.id) {
+            updateAlarm(params.id, alarmData);
+        } else {
+            addAlarm(alarmData);
+        }
 
         router.back();
     };
@@ -251,7 +288,7 @@ export default function CreateAlarmScreen() {
                     <Pressable onPress={() => router.back()} style={styles.closeBtn}>
                         <Text style={styles.closeText}>✕</Text>
                     </Pressable>
-                    <Text style={styles.headerTitle}>ADD ALARM</Text>
+                    <Text style={styles.headerTitle}>{isEditing ? 'EDIT ALARM' : 'ADD ALARM'}</Text>
                 </View>
 
                 {/* Name Input */}
@@ -492,9 +529,9 @@ export default function CreateAlarmScreen() {
                 <View style={{ height: 100 }} />
             </ScrollView>
 
-            {/* Create Button */}
-            <Pressable onPress={handleCreate} style={styles.createBtn}>
-                <Text style={styles.createBtnText}>CREATE ALARM</Text>
+            {/* Create/Update Button */}
+            <Pressable onPress={handleSave} style={styles.createBtn}>
+                <Text style={styles.createBtnText}>{isEditing ? 'UPDATE ALARM' : 'CREATE ALARM'}</Text>
                 <Text style={styles.createBtnIcon}>⏰</Text>
             </Pressable>
         </View>

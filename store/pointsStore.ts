@@ -328,6 +328,20 @@ export const usePointsStore = create<PointsState>()(
                 set((state) => {
                     const dailyPoints = state.history[date] || createEmptyDailyPoints(date, state.dailyGoal);
 
+                    // Create history record for the alarm event
+                    const points = snoozed ? -10 : POINTS_CONFIG.alarm.wakeNoSnooze;
+                    const alarmRecord: SessionRecord = {
+                        id: `alarm-${Date.now()}`,
+                        date,
+                        timestamp: Date.now(),
+                        taskName: snoozed ? 'Alarm Snoozed 💤' : 'Wake Up Goal ☀️',
+                        plannedDuration: 0,
+                        actualDuration: 0,
+                        completionRate: snoozed ? 0 : 100,
+                        pointsEarned: points,
+                        wasAbandoned: false,
+                    };
+
                     return {
                         history: {
                             ...state.history,
@@ -336,6 +350,8 @@ export const usePointsStore = create<PointsState>()(
                                 alarmsTriggered: dailyPoints.alarmsTriggered + 1,
                                 alarmsSnoozed: dailyPoints.alarmsSnoozed + (snoozed ? 1 : 0),
                                 alarmsOnTime: dailyPoints.alarmsOnTime + (snoozed ? 0 : 1),
+                                // Add to sessions list so it shows in history
+                                sessions: [alarmRecord, ...(dailyPoints.sessions || [])],
                             },
                         },
                     };

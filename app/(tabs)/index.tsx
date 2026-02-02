@@ -227,7 +227,7 @@ export default function AlarmsScreen() {
 
   const handleEditAlarm = (id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Edit Alarm', 'Navigation to alarm edit screen coming soon!');
+    router.push({ pathname: '/alarm/create', params: { id } });
   };
 
   const handleDeleteAlarm = (id: string) => {
