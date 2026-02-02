@@ -482,9 +482,11 @@ export default function AlarmRingingScreen() {
         Vibration.cancel();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Record successful wake (if no snoozes were used previously)
+        // Record successful wake
         if (snoozesUsed === 0) {
             pointsStore.recordAlarmTriggered(today, false);
+        } else {
+            pointsStore.recordWakeUpWithSnooze(today);
         }
 
         router.back();

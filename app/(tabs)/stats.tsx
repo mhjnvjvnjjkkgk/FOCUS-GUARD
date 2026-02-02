@@ -1126,24 +1126,26 @@ function NeoHistorySection({ sessions }: NeoHistoryProps) {
                 📜 SESSION HISTORY [{sessions.length} SESSION{sessions.length !== 1 ? 'S' : ''}]
             </Text>
 
-            {displaySessions.map((session, index) => (
-                <NeoSessionCard
-                    key={session.id}
-                    session={session}
-                    delay={460 + index * 50}
-                />
-            ))}
+            <View style={styles.neoHistoryBox}>
+                {displaySessions.map((session, index) => (
+                    <NeoSessionCard
+                        key={session.id}
+                        session={session}
+                        delay={460 + index * 50}
+                    />
+                ))}
 
-            {sessions.length > 5 && !showAll && (
-                <Pressable
-                    onPress={() => setShowAll(true)}
-                    style={styles.neoShowMoreButton}
-                >
-                    <Text style={styles.neoShowMoreText}>
-                        SHOW {sessions.length - 5} MORE SESSION{sessions.length - 5 !== 1 ? 'S' : ''} ▼
-                    </Text>
-                </Pressable>
-            )}
+                {sessions.length > 5 && !showAll && (
+                    <Pressable
+                        onPress={() => setShowAll(true)}
+                        style={styles.neoShowMoreButton}
+                    >
+                        <Text style={styles.neoShowMoreText}>
+                            SHOW {sessions.length - 5} MORE SESSION{sessions.length - 5 !== 1 ? 'S' : ''} ▼
+                        </Text>
+                    </Pressable>
+                )}
+            </View>
         </Animated.View>
     );
 }
@@ -1661,6 +1663,16 @@ const styles: any = StyleSheet.create({
         color: NEO.colors.black,
         letterSpacing: 1,
         marginBottom: 16,
+    },
+    neoHistoryBox: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        padding: 16,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
     },
     neoHistoryEmpty: {
         backgroundColor: '#FFFFFF',

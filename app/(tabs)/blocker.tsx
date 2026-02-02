@@ -233,35 +233,23 @@ export default function BlockerScreen() {
 
     return (
         <View style={styles.container}>
-            {/* PROFILE ICON - TOP LEFT */}
-            <Pressable
-                style={styles.profileIcon}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Alert.alert('Profile', 'Profile/Login functionality coming soon!');
-                }}
-            >
-                <View style={styles.profileIconCircle}>
-                    <Ionicons name="person" size={20} color={NEO_BLACK} />
-                </View>
-            </Pressable>
-
-            {/* FOCUSGUARD LOGO */}
-            <View style={styles.logoContainer}>
-                <View style={styles.logoBox}>
-                    <Text style={styles.logoFG}>FG</Text>
-                </View>
-                <View style={styles.logoTextColumn}>
-                    <Text style={styles.logoText}>FOCUSGUARD</Text>
-                    <View style={styles.logoTag}>
-                        <Text style={styles.logoTagText}>🚫 BLOCKER</Text>
+            {/* UNIFIED HEADER */}
+            <View style={styles.neoHeader}>
+                <Pressable
+                    style={styles.neoAvatarBox}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        Alert.alert('Profile', 'Profile/Login functionality coming soon!');
+                    }}
+                >
+                    <Ionicons name="person" size={24} color={NEO_WHITE} />
+                </Pressable>
+                <View style={styles.neoHeaderText}>
+                    <Text style={styles.neoTitle}>FOCUSGUARD</Text>
+                    <View style={styles.neoSubtitleBox}>
+                        <Text style={styles.neoSubtitle}>🚫 BLOCKER</Text>
                     </View>
                 </View>
-            </View>
-
-            {/* HEADER */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>BLOCKED APP UI</Text>
             </View>
 
             {/* STATS CARD */}
@@ -386,100 +374,50 @@ const styles = StyleSheet.create({
         paddingTop: 60,
     },
 
-    // PROFILE ICON
-    profileIcon: {
-        position: 'absolute',
-        top: 8,
-        left: 16,
-        zIndex: 1000,
-    },
-    profileIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: NEO_WHITE,
-        borderWidth: 3,
-        borderColor: NEO_BLACK,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: NEO_BLACK,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-    },
-
-    // LOGO
-    logoContainer: {
+    // NEO HEADER
+    neoHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 8,
-        marginBottom: 12,
-        gap: 12,
-    },
-    logoBox: {
-        width: 48,
-        height: 48,
-        backgroundColor: NEO_WHITE,
-        borderWidth: 4,
-        borderColor: NEO_BLACK,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: NEO_BLACK,
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-    },
-    logoFG: {
-        fontSize: 20,
-        fontWeight: '900',
-        color: NEO_BLACK,
-        letterSpacing: -1,
-    },
-    logoText: {
-        fontSize: 24,
-        fontWeight: '900',
-        color: NEO_BLACK,
-        letterSpacing: 2,
-    },
-    logoTextColumn: {
-        flex: 1,
-    },
-    logoTag: {
-        backgroundColor: NEO_WHITE,
-        borderWidth: 2,
-        borderColor: NEO_BLACK,
-        alignSelf: 'flex-start',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        marginTop: 4,
-    },
-    logoTagText: {
-        fontSize: 10,
-        fontWeight: '900',
-        color: NEO_BLACK,
-        letterSpacing: 1,
-    },
-
-    // HEADER
-    header: {
         marginHorizontal: 16,
         marginBottom: 16,
-        backgroundColor: NEO_WHITE,
         borderWidth: 4,
         borderColor: NEO_BLACK,
-        borderRadius: 8,
-        overflow: 'hidden',
+        backgroundColor: NEO_WHITE,
+        padding: 12,
         shadowColor: NEO_BLACK,
         shadowOffset: { width: 6, height: 6 },
         shadowOpacity: 1,
         shadowRadius: 0,
     },
-    headerTitle: {
-        fontSize: 20,
+    neoAvatarBox: {
+        width: 50,
+        height: 50,
+        backgroundColor: NEO_BLACK,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    neoHeaderText: {
+        flex: 1,
+    },
+    neoTitle: {
+        fontSize: 24,
         fontWeight: '900',
-        textAlign: 'center',
-        paddingVertical: 12,
+        color: NEO_BLACK,
+        letterSpacing: 2,
+    },
+    neoSubtitleBox: {
+        backgroundColor: NEO_WHITE,
+        borderWidth: 2,
+        borderColor: NEO_BLACK,
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        marginTop: 4,
+    },
+    neoSubtitle: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: NEO_BLACK,
         letterSpacing: 1,
     },
 

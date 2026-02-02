@@ -155,6 +155,7 @@ interface PointsState {
 
     // Actions - Metrics
     recordAlarmTriggered: (date: string, snoozed: boolean) => void;
+    recordWakeUpWithSnooze: (date: string) => void;
     recordTaskStarted: (date: string, onTime: boolean) => void;
     recordTaskCompleted: (date: string) => void;
     recordSessionStarted: (date: string) => void;
@@ -363,6 +364,36 @@ export const usePointsStore = create<PointsState>()(
                 } else {
                     get().addPoints(date, 'alarms', POINTS_CONFIG.alarm.wakeNoSnooze);
                 }
+            },
+
+            recordWakeUpWithSnooze: (date) => {
+                set((state) => {
+                    const dailyPoints = state.history[date] || createEmptyDailyPoints(date, state.dailyGoal);
+
+                    const wakeRecord: SessionRecord = {
+                        id: `alarm-wake-${Date.now()}`,
+                        date,
+                        timestamp: Date.now(),
+                        taskName: 'Wake Up (Snoozed) 🌤️',
+                        plannedDuration: 0,
+                        actualDuration: 0,
+                        completionRate: 50,
+                        pointsEarned: POINTS_CONFIG.alarm.wakeWithSnooze,
+                        wasAbandoned: false,
+                    };
+
+                    return {
+                        history: {
+                            ...state.history,
+                            [date]: {
+                                ...dailyPoints,
+                                alarmsTriggered: dailyPoints.alarmsTriggered + 1,
+                                sessions: [wakeRecord, ...(dailyPoints.sessions || [])],
+                            },
+                        },
+                    };
+                });
+                get().addPoints(date, 'alarms', POINTS_CONFIG.alarm.wakeWithSnooze);
             },
 
             recordTaskStarted: (date, onTime) => {
