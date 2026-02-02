@@ -260,7 +260,12 @@ export default function AlarmsScreen() {
         <View style={styles.logoBox}>
           <Text style={styles.logoFG}>FG</Text>
         </View>
-        <Text style={styles.logoText}>FOCUSGUARD</Text>
+        <View style={styles.logoTextColumn}>
+          <Text style={styles.logoText}>FOCUSGUARD</Text>
+          <View style={styles.logoTag}>
+            <Text style={styles.logoTagText}>⏰ ALARM</Text>
+          </View>
+        </View>
       </View>
 
       {/* HEADER */}
@@ -415,6 +420,24 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: NEO_BLACK,
     letterSpacing: 2,
+  },
+  logoTextColumn: {
+    flex: 1,
+  },
+  logoTag: {
+    backgroundColor: NEO_WHITE,
+    borderWidth: 2,
+    borderColor: NEO_BLACK,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  logoTagText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: NEO_BLACK,
+    letterSpacing: 1,
   },
 
   // HEADER
