@@ -7,632 +7,712 @@ import {
     Pressable,
     TextInput,
     Switch,
+    Alert,
 } from 'react-native';
-import Animated, {
-    FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-} from 'react-native-reanimated';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { router, Stack } from 'expo-router';
+import { useAlarmStore } from '@/store/alarmStore';
 
-import { Colors, Spacing, BorderRadius, Shadows, Animations, FeatureColors } from '@/constants/Theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAlarmStore } from '@/store';
-import { TimePicker } from '@/components/ui/WheelPicker';
+// Neobrutalist Design System
+const NEO = {
+    colors: {
+        white: '#FFFFFF',
+        black: '#000000',
+        cyan: '#00FFFF',
+        orange: '#FF5500',
+        grey: '#C0C0C0',
+        darkGrey: '#666666',
+    },
+    border: 4,
+    shadow: 6,
+};
 
-// Dismiss task types
-const DISMISS_TASKS = [
-    { id: 'none', name: 'Quick Dismiss', icon: '⚡', description: 'Just tap to dismiss' },
-    { id: 'math', name: 'Math Problems', icon: '🧮', description: 'Solve math to wake up' },
-    { id: 'shake', name: 'Shake Phone', icon: '📳', description: 'Shake vigorously' },
-    { id: 'typing', name: 'Typing', icon: '⌨️', description: 'Type a phrase' },
-    { id: 'walk', name: 'Walk Steps', icon: '🚶', description: 'Walk to dismiss' },
-    { id: 'breathing', name: 'Breathing', icon: '🧘', description: 'Breathing exercise' },
-];
-
-// Days of week
+// Days reference
 const DAYS = [
-    { id: 0, short: 'S', full: 'Sun' },
-    { id: 1, short: 'M', full: 'Mon' },
-    { id: 2, short: 'T', full: 'Tue' },
-    { id: 3, short: 'W', full: 'Wed' },
-    { id: 4, short: 'T', full: 'Thu' },
-    { id: 5, short: 'F', full: 'Fri' },
-    { id: 6, short: 'S', full: 'Sat' },
-];
-
-// Ringtones
-const RINGTONES = [
-    { id: 'gentle', name: 'Gentle Sunrise', icon: '🌅' },
-    { id: 'digital', name: 'Digital Beep', icon: '📢' },
-    { id: 'radar', name: 'Radar Ping', icon: '📡' },
-    { id: 'phoenix', name: 'Phoenix Rise', icon: '🔥' },
-    { id: 'zen', name: 'Zen Garden', icon: '🧘' },
+    { id: 0, label: 'S' },
+    { id: 1, label: 'M' },
+    { id: 2, label: 'T' },
+    { id: 3, label: 'W' },
+    { id: 4, label: 'T' },
+    { id: 5, label: 'F' },
+    { id: 6, label: 'S' },
 ];
 
 export default function CreateAlarmScreen() {
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
-    const addAlarm = useAlarmStore((state) => state.addAlarm);
+    const { addAlarm } = useAlarmStore();
 
     // Form state
-    const [hour, setHour] = useState(7);
-    const [minute, setMinute] = useState(0);
     const [label, setLabel] = useState('');
-    const [repeatDays, setRepeatDays] = useState<number[]>([1, 2, 3, 4, 5]);
-    const [selectedRingtone, setSelectedRingtone] = useState(RINGTONES[0]);
+
+    // Time state (24-hour internally)
+    const [hour, setHour] = useState(7);
+    const [minute, setMinute] = useState(30);
+    const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
+
+    // Repeat days
+    const [repeatDays, setRepeatDays] = useState<number[]>([1, 2, 3, 4, 5]); // Weekdays default
+
+    // Sound & Vibration
+    const [ringtone, setRingtone] = useState('classic');
+    const [volume, setVolume] = useState(80);
+    const [gradualVolume, setGradualVolume] = useState(true);
+    const [vibrate, setVibrate] = useState(true);
+
+    // Snooze
     const [snoozeEnabled, setSnoozeEnabled] = useState(true);
     const [snoozeDuration, setSnoozeDuration] = useState(5);
-    const [selectedTask, setSelectedTask] = useState(DISMISS_TASKS[1]);
-    const [vibrate, setVibrate] = useState(true);
-    const [gradualVolume, setGradualVolume] = useState(true);
+    const [snoozeLimit, setSnoozeLimit] = useState(3);
 
-    // Task configuration
-    const [mathDifficulty, setMathDifficulty] = useState<'easy' | 'medium' | 'hard' | 'extreme'>('medium');
-    const [mathCount, setMathCount] = useState(3);
+    // Dismissal challenge
+    const [challengeType, setChallengeType] = useState('math');
+    const [difficulty, setDifficulty] = useState('medium');
+    const [problemCount, setProblemCount] = useState(3);
 
-    const toggleDay = (dayId: number) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setRepeatDays(prev =>
-            prev.includes(dayId)
-                ? prev.filter(d => d !== dayId)
-                : [...prev, dayId].sort()
-        );
+    // Convert 12h to 24h
+    const to24H = (hour12: number, period: 'AM' | 'PM') => {
+        if (period === 'AM') {
+            return hour12 === 12 ? 0 : hour12;
+        } else {
+            return hour12 === 12 ? 12 : hour12 + 12;
+        }
     };
 
-    const handleSave = () => {
+    // Convert 24h to 12h
+    const to12H = (hour24: number) => {
+        if (hour24 === 0) return 12;
+        if (hour24 > 12) return hour24 - 12;
+        return hour24;
+    };
+
+    // Get display hour
+    const displayHour = to12H(hour);
+
+    // Handle hour increment/decrement
+    const adjustHour = (delta: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        let newDisplay = displayHour + delta;
+        if (newDisplay > 12) newDisplay = 1;
+        if (newDisplay < 1) newDisplay = 12;
+        setHour(to24H(newDisplay, period));
+    };
+
+    // Handle minute increment/decrement
+    const adjustMinute = (delta: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        let newMin = minute + delta;
+        if (newMin > 59) newMin = 0;
+        if (newMin < 0) newMin = 59;
+        setMinute(newMin);
+    };
+
+    // Toggle period
+    const togglePeriod = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const newPeriod = period === 'AM' ? 'PM' : 'AM';
+        setPeriod(newPeriod);
+        setHour(to24H(displayHour, newPeriod));
+    };
+
+    // Toggle day
+    const toggleDay = (dayId: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (repeatDays.includes(dayId)) {
+            setRepeatDays(repeatDays.filter(d => d !== dayId));
+        } else {
+            setRepeatDays([...repeatDays, dayId].sort());
+        }
+    };
+
+    // Create alarm
+    const handleCreate = () => {
+        if (!label.trim()) {
+            Alert.alert('Missing Label', 'Please enter a label for this alarm');
+            return;
+        }
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Create the alarm object and save to store
         addAlarm({
             time: { hour, minute },
-            label: label || 'Alarm',
+            label: label.trim(),
             repeatDays,
             enabled: true,
-            ringtoneId: selectedRingtone.id,
-            ringtoneName: selectedRingtone.name,
-            volume: 80,
+            sound: ringtone,
             vibrate,
-            gradualVolume,
             snoozeEnabled,
             snoozeDuration,
-            snoozeLimit: 3,
-            snoozesUsed: 0,
-            dismissTask: {
-                type: selectedTask.id as any,
-                mathDifficulty: selectedTask.id === 'math' ? mathDifficulty : undefined,
-                mathCount: selectedTask.id === 'math' ? mathCount : undefined,
-            },
+            maxSnoozes: snoozeLimit,
+            dismissTasks: challengeType === 'none' ? [] : [{
+                id: challengeType,
+                type: challengeType as any,
+                difficulty: difficulty as any,
+                count: problemCount,
+            }],
         });
 
         router.back();
     };
 
-    // Format time for display
-    const formatTime = () => {
-        const period = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour % 12 || 12;
-        return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
-    };
-
     return (
-        <>
-            <Stack.Screen
-                options={{
-                    headerTitle: 'New Alarm',
-                    headerStyle: { backgroundColor: isDark ? Colors.gray[900] : Colors.background.primary },
-                    headerTintColor: isDark ? Colors.text.inverse : Colors.text.primary,
-                    headerRight: () => (
-                        <Pressable onPress={handleSave} style={styles.saveButton}>
-                            <Text style={styles.saveButtonText}>Save</Text>
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+                        <Text style={styles.closeText}>✕</Text>
+                    </Pressable>
+                    <Text style={styles.headerTitle}>ADD ALARM</Text>
+                </View>
+
+                {/* Name Input */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>NAME</Text>
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.inputIcon}>📄</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={label}
+                            onChangeText={setLabel}
+                            placeholder="e.g. Morning Workout"
+                            placeholderTextColor={NEO.colors.darkGrey}
+                        />
+                    </View>
+                </View>
+
+                {/* Time Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>TIME</Text>
+
+                    {/* Time Display */}
+                    <View style={styles.timeDisplay}>
+                        <Text style={styles.timeDisplayText}>
+                            {displayHour.toString().padStart(2, '0')}:{minute.toString().padStart(2, '0')} {period}
+                        </Text>
+                    </View>
+
+                    {/* Time Pickers */}
+                    <View style={styles.timePickerRow}>
+                        <Text style={styles.timeLabel}>START</Text>
+                    </View>
+                    <View style={styles.pickerContainer}>
+                        {/* Hour Picker */}
+                        <View style={styles.picker}>
+                            <Pressable onPress={() => adjustHour(1)} style={styles.pickerBtn}>
+                                <Ionicons name="caret-up" size={20} color="black" />
+                            </Pressable>
+                            <View style={styles.pickerValue}>
+                                <Text style={styles.pickerValueText}>{displayHour.toString().padStart(2, '0')}</Text>
+                            </View>
+                            <Pressable onPress={() => adjustHour(-1)} style={styles.pickerBtn}>
+                                <Ionicons name="caret-down" size={20} color="black" />
+                            </Pressable>
+                        </View>
+
+                        <Text style={styles.colon}>:</Text>
+
+                        {/* Minute Picker */}
+                        <View style={styles.picker}>
+                            <Pressable onPress={() => adjustMinute(1)} style={styles.pickerBtn}>
+                                <Ionicons name="caret-up" size={20} color="black" />
+                            </Pressable>
+                            <View style={styles.pickerValue}>
+                                <Text style={styles.pickerValueText}>{minute.toString().padStart(2, '0')}</Text>
+                            </View>
+                            <Pressable onPress={() => adjustMinute(-1)} style={styles.pickerBtn}>
+                                <Ionicons name="caret-down" size={20} color="black" />
+                            </Pressable>
+                        </View>
+
+                        {/* Period Toggle */}
+                        <Pressable onPress={togglePeriod} style={styles.periodToggle}>
+                            <Text style={[styles.periodText, period === 'AM' && styles.periodActive]}>AM</Text>
+                            <View style={styles.periodDivider} />
+                            <Text style={[styles.periodText, period === 'PM' && styles.periodActive]}>PM</Text>
                         </Pressable>
-                    ),
-                }}
-            />
-
-            <ScrollView
-                style={[styles.container, isDark && styles.containerDark]}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Time Picker */}
-                <Animated.View
-                    entering={FadeInUp.delay(100).springify()}
-                    style={[styles.section, isDark && styles.sectionDark]}
-                >
-                    <Text style={[styles.sectionLabel, isDark && styles.textSecondaryDark]}>Time</Text>
-                    <TimePicker
-                        hours={hour}
-                        minutes={minute}
-                        onHoursChange={setHour}
-                        onMinutesChange={setMinute}
-                        use24Hour={false}
-                    />
-                </Animated.View>
-
-                {/* Label Input */}
-                <Animated.View
-                    entering={FadeInDown.delay(150).springify()}
-                    style={[styles.section, isDark && styles.sectionDark]}
-                >
-                    <Text style={[styles.sectionLabel, isDark && styles.textSecondaryDark]}>Label</Text>
-                    <TextInput
-                        style={[styles.textInput, isDark && styles.textInputDark]}
-                        placeholder="Alarm name (optional)"
-                        placeholderTextColor={Colors.gray[400]}
-                        value={label}
-                        onChangeText={setLabel}
-                    />
-                </Animated.View>
+                    </View>
+                </View>
 
                 {/* Repeat Days */}
-                <Animated.View
-                    entering={FadeInDown.delay(200).springify()}
-                    style={[styles.section, isDark && styles.sectionDark]}
-                >
-                    <Text style={[styles.sectionLabel, isDark && styles.textSecondaryDark]}>Repeat</Text>
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>REPEAT</Text>
                     <View style={styles.daysRow}>
-                        {DAYS.map(day => (
-                            <Pressable
-                                key={day.id}
-                                style={[
-                                    styles.dayButton,
-                                    repeatDays.includes(day.id) && styles.dayButtonActive,
-                                ]}
-                                onPress={() => toggleDay(day.id)}
-                            >
-                                <Text style={[
-                                    styles.dayButtonText,
-                                    repeatDays.includes(day.id) && styles.dayButtonTextActive,
-                                ]}>
-                                    {day.short}
-                                </Text>
-                            </Pressable>
-                        ))}
+                        {DAYS.map(day => {
+                            const isActive = repeatDays.includes(day.id);
+                            return (
+                                <Pressable
+                                    key={day.id}
+                                    onPress={() => toggleDay(day.id)}
+                                    style={[styles.dayBtn, isActive && styles.dayBtnActive]}
+                                >
+                                    <Text style={[styles.dayBtnText, isActive && styles.dayBtnTextActive]}>
+                                        {day.label}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
                     </View>
-                    <Text style={styles.repeatSummary}>
-                        {repeatDays.length === 7 ? 'Every day' :
-                            repeatDays.length === 0 ? 'One time only' :
-                                repeatDays.map(d => DAYS[d].full).join(', ')}
-                    </Text>
-                </Animated.View>
+                </View>
 
-                {/* Sound */}
-                <Animated.View
-                    entering={FadeInDown.delay(250).springify()}
-                    style={[styles.section, isDark && styles.sectionDark]}
-                >
-                    <Text style={[styles.sectionLabel, isDark && styles.textSecondaryDark]}>Sound</Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.ringtonesRow}
-                    >
-                        {RINGTONES.map(ringtone => (
-                            <Pressable
-                                key={ringtone.id}
-                                style={[
-                                    styles.ringtoneChip,
-                                    selectedRingtone.id === ringtone.id && styles.ringtoneChipActive,
-                                ]}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    setSelectedRingtone(ringtone);
-                                }}
-                            >
-                                <Text style={styles.ringtoneIcon}>{ringtone.icon}</Text>
-                                <Text style={[
-                                    styles.ringtoneName,
-                                    selectedRingtone.id === ringtone.id && styles.ringtoneNameActive,
-                                ]}>
-                                    {ringtone.name}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
+                {/* Sound & Vibration */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>SOUND & VIBRATION</Text>
 
-                    <View style={styles.optionRow}>
-                        <View style={styles.optionInfo}>
-                            <Ionicons name="phone-portrait" size={20} color={Colors.gray[600]} />
-                            <Text style={[styles.optionLabel, isDark && styles.textDark]}>Vibrate</Text>
-                        </View>
+                    <Pressable style={styles.dropdown}>
+                        <Text style={styles.dropdownIcon}>🔔</Text>
+                        <Text style={styles.dropdownText}>Classic Alarm</Text>
+                        <Ionicons name="chevron-down" size={16} color="black" />
+                    </Pressable>
+
+                    <View style={styles.toggleRow}>
+                        <Text style={styles.toggleLabel}>Vibrate</Text>
                         <Switch
                             value={vibrate}
                             onValueChange={setVibrate}
-                            trackColor={{ false: Colors.gray[300], true: FeatureColors.alarm.primary + '60' }}
-                            thumbColor={vibrate ? FeatureColors.alarm.primary : Colors.gray[100]}
+                            trackColor={{ false: NEO.colors.grey, true: NEO.colors.orange }}
+                            thumbColor={NEO.colors.white}
                         />
                     </View>
 
-                    <View style={styles.optionRow}>
-                        <View style={styles.optionInfo}>
-                            <Ionicons name="volume-low" size={20} color={Colors.gray[600]} />
-                            <Text style={[styles.optionLabel, isDark && styles.textDark]}>Gradual Volume</Text>
-                        </View>
+                    <View style={styles.toggleRow}>
+                        <Text style={styles.toggleLabel}>Gradual Volume</Text>
                         <Switch
                             value={gradualVolume}
                             onValueChange={setGradualVolume}
-                            trackColor={{ false: Colors.gray[300], true: FeatureColors.alarm.primary + '60' }}
-                            thumbColor={gradualVolume ? FeatureColors.alarm.primary : Colors.gray[100]}
+                            trackColor={{ false: NEO.colors.grey, true: NEO.colors.orange }}
+                            thumbColor={NEO.colors.white}
                         />
                     </View>
-                </Animated.View>
+                </View>
 
-                {/* Snooze */}
-                <Animated.View
-                    entering={FadeInDown.delay(300).springify()}
-                    style={[styles.section, isDark && styles.sectionDark]}
-                >
-                    <View style={styles.optionRow}>
-                        <View style={styles.optionInfo}>
-                            <Ionicons name="alarm" size={20} color={Colors.gray[600]} />
-                            <Text style={[styles.optionLabel, isDark && styles.textDark]}>Snooze</Text>
-                        </View>
+                {/* Snooze Options */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>SNOOZE OPTIONS</Text>
+
+                    <View style={styles.toggleRow}>
+                        <Text style={styles.toggleLabel}>Snooze Enabled</Text>
                         <Switch
                             value={snoozeEnabled}
                             onValueChange={setSnoozeEnabled}
-                            trackColor={{ false: Colors.gray[300], true: FeatureColors.alarm.primary + '60' }}
-                            thumbColor={snoozeEnabled ? FeatureColors.alarm.primary : Colors.gray[100]}
+                            trackColor={{ false: NEO.colors.grey, true: NEO.colors.orange }}
+                            thumbColor={NEO.colors.white}
                         />
                     </View>
 
                     {snoozeEnabled && (
-                        <View style={styles.snoozeOptions}>
-                            <Text style={styles.snoozeLabel}>Duration:</Text>
-                            {[1, 5, 10, 15, 20].map(mins => (
-                                <Pressable
-                                    key={mins}
-                                    style={[
-                                        styles.snoozeChip,
-                                        snoozeDuration === mins && styles.snoozeChipActive,
-                                    ]}
-                                    onPress={() => setSnoozeDuration(mins)}
-                                >
-                                    <Text style={[
-                                        styles.snoozeChipText,
-                                        snoozeDuration === mins && styles.snoozeChipTextActive,
-                                    ]}>
-                                        {mins}m
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </View>
-                    )}
-                </Animated.View>
-
-                {/* Dismiss Task */}
-                <Animated.View
-                    entering={FadeInDown.delay(350).springify()}
-                    style={[styles.section, isDark && styles.sectionDark]}
-                >
-                    <Text style={[styles.sectionLabel, isDark && styles.textSecondaryDark]}>Dismiss Task</Text>
-                    <View style={styles.tasksGrid}>
-                        {DISMISS_TASKS.map(task => (
-                            <Pressable
-                                key={task.id}
-                                style={[
-                                    styles.taskCard,
-                                    selectedTask.id === task.id && styles.taskCardActive,
-                                ]}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                    setSelectedTask(task);
-                                }}
-                            >
-                                <Text style={styles.taskIcon}>{task.icon}</Text>
-                                <Text style={[styles.taskName, selectedTask.id === task.id && styles.taskNameActive]}>
-                                    {task.name}
-                                </Text>
+                        <>
+                            <Pressable style={styles.dropdown}>
+                                <Text style={styles.dropdownIcon}>⏳</Text>
+                                <Text style={styles.dropdownText}>{snoozeDuration} min</Text>
+                                <Ionicons name="chevron-down" size={16} color="black" />
                             </Pressable>
-                        ))}
-                    </View>
-                </Animated.View>
 
-                {/* Math Config */}
-                {selectedTask.id === 'math' && (
-                    <Animated.View
-                        entering={FadeInDown.springify()}
-                        style={[styles.section, isDark && styles.sectionDark]}
-                    >
-                        <Text style={[styles.sectionLabel, isDark && styles.textSecondaryDark]}>Math Settings</Text>
-
-                        <Text style={styles.configLabel}>Difficulty:</Text>
-                        <View style={styles.configRow}>
-                            {(['easy', 'medium', 'hard', 'extreme'] as const).map(diff => (
+                            <View style={styles.stepper}>
                                 <Pressable
-                                    key={diff}
-                                    style={[styles.configChip, mathDifficulty === diff && styles.configChipActive]}
-                                    onPress={() => setMathDifficulty(diff)}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setSnoozeLimit(Math.max(1, snoozeLimit - 1));
+                                    }}
+                                    style={styles.stepperBtn}
                                 >
-                                    <Text style={[styles.configChipText, mathDifficulty === diff && styles.configChipTextActive]}>
-                                        {diff.charAt(0).toUpperCase() + diff.slice(1)}
-                                    </Text>
+                                    <Text style={styles.stepperBtnText}>−</Text>
                                 </Pressable>
-                            ))}
-                        </View>
-
-                        <Text style={styles.configLabel}>Problems:</Text>
-                        <View style={styles.configRow}>
-                            {[1, 3, 5, 10].map(count => (
+                                <View style={styles.stepperValue}>
+                                    <Text style={styles.stepperValueText}>{snoozeLimit} snoozes max</Text>
+                                </View>
                                 <Pressable
-                                    key={count}
-                                    style={[styles.configChip, mathCount === count && styles.configChipActive]}
-                                    onPress={() => setMathCount(count)}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setSnoozeLimit(Math.min(10, snoozeLimit + 1));
+                                    }}
+                                    style={styles.stepperBtn}
                                 >
-                                    <Text style={[styles.configChipText, mathCount === count && styles.configChipTextActive]}>
-                                        {count}
-                                    </Text>
+                                    <Text style={styles.stepperBtnText}>+</Text>
                                 </Pressable>
-                            ))}
-                        </View>
-                    </Animated.View>
-                )}
+                            </View>
+                        </>
+                    )}
+                </View>
 
-                {/* Save Button */}
-                <Animated.View entering={FadeInDown.delay(400).springify()}>
-                    <Pressable style={styles.saveButtonLarge} onPress={handleSave}>
-                        <Ionicons name="checkmark-circle" size={24} color={Colors.text.inverse} />
-                        <Text style={styles.saveButtonLargeText}>Save Alarm</Text>
+                {/* Dismissal Challenge */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>DISMISSAL CHALLENGE</Text>
+
+                    <Pressable style={styles.dropdown}>
+                        <Text style={styles.dropdownIcon}>🧮</Text>
+                        <Text style={styles.dropdownText}>Math</Text>
+                        <Ionicons name="chevron-down" size={16} color="black" />
                     </Pressable>
-                </Animated.View>
 
-                <View style={{ height: 40 }} />
+                    <Text style={styles.subsectionLabel}>MATH TASK SETTINGS</Text>
+
+                    <Pressable style={styles.dropdown}>
+                        <Text style={styles.dropdownText}>Difficulty: {difficulty}</Text>
+                        <Ionicons name="chevron-down" size={16} color="black" />
+                    </Pressable>
+
+                    <View style={styles.stepper}>
+                        <Pressable
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setProblemCount(Math.max(1, problemCount - 1));
+                            }}
+                            style={styles.stepperBtn}
+                        >
+                            <Text style={styles.stepperBtnText}>−</Text>
+                        </Pressable>
+                        <View style={styles.stepperValue}>
+                            <Text style={styles.stepperValueText}>Problem Count: {problemCount}</Text>
+                        </View>
+                        <Pressable
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setProblemCount(Math.min(10, problemCount + 1));
+                            }}
+                            style={styles.stepperBtn}
+                        >
+                            <Text style={styles.stepperBtnText}>+</Text>
+                        </Pressable>
+                    </View>
+                </View>
+
+                <View style={{ height: 100 }} />
             </ScrollView>
-        </>
+
+            {/* Create Button */}
+            <Pressable onPress={handleCreate} style={styles.createBtn}>
+                <Text style={styles.createBtnText}>CREATE ALARM</Text>
+                <Text style={styles.createBtnIcon}>⏰</Text>
+            </Pressable>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background.secondary,
+        backgroundColor: NEO.colors.white,
     },
-    containerDark: {
-        backgroundColor: Colors.gray[900],
-    },
-    scrollContent: {
-        padding: Spacing[4],
-    },
-    saveButton: {
-        paddingHorizontal: Spacing[3],
-        paddingVertical: Spacing[1],
-    },
-    saveButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: FeatureColors.alarm.primary,
+    scroll: {
+        padding: 16,
+        paddingBottom: 100,
     },
 
-    // Sections - Premium
-    section: {
-        backgroundColor: Colors.background.primary,
-        borderRadius: BorderRadius['2xl'],
-        padding: Spacing[5],
-        marginBottom: Spacing[4],
-        ...Shadows.lg,
+    // Header
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: NEO.colors.white,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        padding: 16,
+        marginBottom: 20,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: NEO.shadow, height: NEO.shadow },
+        shadowOpacity: 1,
+        shadowRadius: 0,
     },
-    sectionDark: {
-        backgroundColor: '#1a1a2e',
+    closeBtn: {
+        width: 40,
+        height: 40,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    closeText: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: NEO.colors.black,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: NEO.colors.black,
+        letterSpacing: 2,
+    },
+
+    // Section
+    section: {
+        marginBottom: 20,
     },
     sectionLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: Colors.text.secondary,
-        marginBottom: Spacing[3],
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        fontSize: 14,
+        fontWeight: '900',
+        color: NEO.colors.black,
+        marginBottom: 8,
+        letterSpacing: 1,
+    },
+    subsectionLabel: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: NEO.colors.darkGrey,
+        marginTop: 12,
+        marginBottom: 8,
+        letterSpacing: 1,
     },
 
-    // Text Input
-    textInput: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: BorderRadius.lg,
-        borderWidth: 2,
-        borderColor: Colors.gray[300],
-        paddingHorizontal: Spacing[4],
-        paddingVertical: Spacing[4],
-        fontSize: 18,
-        fontWeight: '500',
-        color: '#1a1a2e',
+    // Input
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: NEO.colors.white,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        height: 56,
+        paddingHorizontal: 12,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
     },
-    textInputDark: {
-        backgroundColor: '#2a2a3e',
-        borderColor: Colors.gray[500],
-        color: '#FFFFFF',
+    inputIcon: {
+        fontSize: 20,
+        marginRight: 8,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: '600',
+        color: NEO.colors.black,
+    },
+
+    // Time Display
+    timeDisplay: {
+        backgroundColor: NEO.colors.white,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        padding: 12,
+        marginBottom: 12,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+    },
+    timeDisplayText: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: NEO.colors.black,
+        letterSpacing: 2,
+    },
+    timeLabel: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: NEO.colors.darkGrey,
+        marginBottom: 8,
+        letterSpacing: 1,
+    },
+    timePickerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 8,
+    },
+
+    // Picker
+    pickerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    picker: {
+        alignItems: 'center',
+    },
+    pickerBtn: {
+        width: 60,
+        height: 40,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    pickerValue: {
+        width: 60,
+        height: 60,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginVertical: 4,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+    },
+    pickerValueText: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: NEO.colors.black,
+    },
+    colon: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: NEO.colors.black,
+        marginHorizontal: 4,
+    },
+
+    // Period Toggle
+    periodToggle: {
+        flexDirection: 'column',
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.white,
+        marginLeft: 12,
+        overflow: 'hidden',
+    },
+    periodText: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        fontSize: 14,
+        fontWeight: '900',
+        color: NEO.colors.darkGrey,
+    },
+    periodActive: {
+        backgroundColor: NEO.colors.cyan,
+        color: NEO.colors.black,
+    },
+    periodDivider: {
+        height: 2,
+        backgroundColor: NEO.colors.black,
     },
 
     // Days
     daysRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: Spacing[2],
+        gap: 8,
     },
-    dayButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: Colors.gray[100],
-        alignItems: 'center',
+    dayBtn: {
+        flex: 1,
+        height: 48,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.grey,
         justifyContent: 'center',
-    },
-    dayButtonActive: {
-        backgroundColor: FeatureColors.alarm.primary,
-    },
-    dayButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: Colors.text.secondary,
-    },
-    dayButtonTextActive: {
-        color: Colors.text.inverse,
-    },
-    repeatSummary: {
-        fontSize: 13,
-        color: Colors.text.secondary,
-        textAlign: 'center',
-    },
-
-    // Ringtones
-    ringtonesRow: {
-        gap: Spacing[2],
-        marginBottom: Spacing[3],
-    },
-    ringtoneChip: {
-        flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: Spacing[3],
-        paddingVertical: Spacing[2],
-        borderRadius: BorderRadius.full,
-        backgroundColor: Colors.gray[100],
-        gap: Spacing[2],
     },
-    ringtoneChipActive: {
-        backgroundColor: FeatureColors.alarm.primary,
+    dayBtnActive: {
+        backgroundColor: NEO.colors.orange,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
     },
-    ringtoneIcon: {
+    dayBtnText: {
         fontSize: 16,
+        fontWeight: '900',
+        color: NEO.colors.darkGrey,
     },
-    ringtoneName: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: Colors.text.secondary,
-    },
-    ringtoneNameActive: {
-        color: Colors.text.inverse,
+    dayBtnTextActive: {
+        color: NEO.colors.black,
     },
 
-    // Options
-    optionRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: Spacing[2],
-    },
-    optionInfo: {
+    // Dropdown
+    dropdown: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: Spacing[2],
+        backgroundColor: NEO.colors.white,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        height: 48,
+        paddingHorizontal: 12,
+        marginBottom: 12,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
     },
-    optionLabel: {
-        fontSize: 15,
-        color: Colors.text.primary,
-    },
-    textDark: {
-        color: Colors.text.inverse,
-    },
-    textSecondaryDark: {
-        color: Colors.gray[400],
-    },
-
-    // Snooze
-    snoozeOptions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing[2],
-        marginTop: Spacing[2],
-    },
-    snoozeLabel: {
-        fontSize: 13,
-        color: Colors.text.secondary,
-    },
-    snoozeChip: {
-        paddingHorizontal: Spacing[3],
-        paddingVertical: Spacing[1],
-        borderRadius: BorderRadius.full,
-        backgroundColor: Colors.gray[100],
-    },
-    snoozeChipActive: {
-        backgroundColor: FeatureColors.alarm.primary,
-    },
-    snoozeChipText: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: Colors.text.secondary,
-    },
-    snoozeChipTextActive: {
-        color: Colors.text.inverse,
-    },
-
-    // Tasks
-    tasksGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing[2],
-    },
-    taskCard: {
-        width: '31%',
-        backgroundColor: Colors.gray[100],
-        borderRadius: BorderRadius.lg,
-        padding: Spacing[3],
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'transparent',
-    },
-    taskCardActive: {
-        borderColor: FeatureColors.alarm.primary,
-        backgroundColor: FeatureColors.alarm.light,
-    },
-    taskIcon: {
-        fontSize: 24,
-        marginBottom: Spacing[1],
-    },
-    taskName: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: Colors.text.primary,
-        textAlign: 'center',
-    },
-    taskNameActive: {
-        color: FeatureColors.alarm.primary,
-    },
-
-    // Config
-    configLabel: {
-        fontSize: 13,
-        color: Colors.text.secondary,
-        marginBottom: Spacing[2],
-        marginTop: Spacing[2],
-    },
-    configRow: {
-        flexDirection: 'row',
-        gap: Spacing[2],
-    },
-    configChip: {
-        paddingHorizontal: Spacing[3],
-        paddingVertical: Spacing[2],
-        borderRadius: BorderRadius.lg,
-        backgroundColor: Colors.gray[100],
-    },
-    configChipActive: {
-        backgroundColor: FeatureColors.alarm.primary,
-    },
-    configChipText: {
-        fontSize: 13,
-        fontWeight: '500',
-        color: Colors.text.secondary,
-    },
-    configChipTextActive: {
-        color: Colors.text.inverse,
-    },
-
-    // Save Button Large
-    saveButtonLarge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: FeatureColors.alarm.primary,
-        borderRadius: BorderRadius.xl,
-        paddingVertical: Spacing[4],
-        gap: Spacing[2],
-        ...Shadows.lg,
-    },
-    saveButtonLargeText: {
+    dropdownIcon: {
         fontSize: 18,
-        fontWeight: '600',
-        color: Colors.text.inverse,
+        marginRight: 8,
+    },
+    dropdownText: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '700',
+        color: NEO.colors.black,
+    },
+
+    // Toggle
+    toggleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        borderBottomWidth: 2,
+        borderColor: '#EEEEEE',
+    },
+    toggleLabel: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: NEO.colors.black,
+    },
+
+    // Stepper
+    stepper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+    },
+    stepperBtn: {
+        width: 48,
+        height: 48,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    stepperBtnText: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: NEO.colors.black,
+    },
+    stepperValue: {
+        flex: 1,
+        height: 48,
+        borderTopWidth: NEO.border,
+        borderBottomWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        backgroundColor: NEO.colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    stepperValueText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: NEO.colors.black,
+    },
+
+    // Create Button
+    createBtn: {
+        position: 'absolute',
+        bottom: 20,
+        left: 16,
+        right: 16,
+        height: 64,
+        backgroundColor: NEO.colors.cyan,
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: NEO.shadow, height: NEO.shadow },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+    },
+    createBtnText: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: NEO.colors.black,
+        letterSpacing: 2,
+        marginRight: 8,
+    },
+    createBtnIcon: {
+        fontSize: 24,
     },
 });
