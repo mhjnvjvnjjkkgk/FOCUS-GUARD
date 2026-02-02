@@ -446,7 +446,7 @@ export const usePointsStore = create<PointsState>()(
                                 sessionsCompleted: newSessionCount,
                                 totalFocusMinutes: dailyPoints.totalFocusMinutes + focusMinutes,
                                 avgCompletionRate: avgCompletion,
-                                sessions: [...dailyPoints.sessions, sessionRecord],
+                                sessions: [...(dailyPoints.sessions || []), sessionRecord],
                             },
                         },
                         totalSessionsCompleted: state.totalSessionsCompleted + 1,
