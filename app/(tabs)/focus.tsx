@@ -22,7 +22,7 @@ import { Audio } from 'expo-av';
 import Svg, { Circle } from 'react-native-svg';
 import { useNavigation, useLocalSearchParams, router } from 'expo-router';
 
-import { usePointsStore } from '@/store/pointsStore';
+import { usePointsStore, POINTS_CONFIG } from '@/store/pointsStore';
 import { usePlannerStore } from '@/store/plannerStore';
 
 // NEO CONSTANTS
@@ -370,10 +370,10 @@ export default function FocusModeScreen() {
         // Calculate points based on completion rating
         let pointsAwarded = 0;
         switch (completionRating) {
-            case 100: pointsAwarded = 50; break;
-            case 75: pointsAwarded = 35; break;
-            case 50: pointsAwarded = 20; break;
-            case 25: pointsAwarded = 10; break;
+            case 100: pointsAwarded = POINTS_CONFIG.session.completion100; break;
+            case 75: pointsAwarded = POINTS_CONFIG.session.completion75; break;
+            case 50: pointsAwarded = POINTS_CONFIG.session.completion50; break;
+            case 25: pointsAwarded = POINTS_CONFIG.session.completion25; break;
             case 0: pointsAwarded = 0; break;
         }
 
