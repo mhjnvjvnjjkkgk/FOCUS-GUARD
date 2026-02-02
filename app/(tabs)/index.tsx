@@ -242,77 +242,64 @@ export default function AlarmsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* PROFILE ICON - TOP LEFT */}
-      <Pressable
-        style={styles.profileIcon}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Alert.alert('Profile', 'Profile/Login functionality coming soon!');
-        }}
-      >
-        <View style={styles.profileIconCircle}>
-          <Ionicons name="person" size={20} color={NEO_BLACK} />
-        </View>
-      </Pressable>
-
-      {/* FOCUSGUARD LOGO */}
-      <View style={styles.logoContainer}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoFG}>FG</Text>
-        </View>
-        <View style={styles.logoTextColumn}>
-          <Text style={styles.logoText}>FOCUSGUARD</Text>
-          <View style={styles.logoTag}>
-            <Text style={styles.logoTagText}>⏰ ALARM</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>ALARM</Text>
-        <View style={styles.headerAccent} />
-      </View>
-
-      {/* STATS CARD */}
-      <View style={styles.statsCard}>
-        <View style={[styles.statBox, { backgroundColor: NEO_ORANGE }]}>
-          <Text style={styles.statLabel}>ACTIVE</Text>
-          <Text style={styles.statValue}>
-            {activeCount.toString().padStart(2, '0')}
-          </Text>
-        </View>
-
-        <View style={[styles.statBox, { backgroundColor: NEO_GREEN }]}>
-          <Text style={styles.statLabel}>NEXT</Text>
-          <Text style={styles.statValue}>
-            {nextAlarmTime === 'Disabled' || nextAlarmTime === '--'
-              ? '--'
-              : nextAlarmTime.replace('In ', '')}
-          </Text>
-        </View>
-
-        <View style={[styles.statBox, { backgroundColor: NEO_PURPLE }]}>
-          <Text style={styles.statLabel}>TOTAL</Text>
-          <Text style={styles.statValue}>
-            {totalCount.toString().padStart(2, '0')}
-          </Text>
-        </View>
-      </View>
-
-      {/* INSTRUCTION STRIP */}
-      <View style={styles.instructionStrip}>
-        <Text style={styles.instructionText}>
-          YOUR ALARMS // TAP TO EDIT // LONG PRESS TO DELETE
-        </Text>
-      </View>
-
-      {/* ALARMS LIST */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* FOCUSGUARD LOGO */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoBox}>
+            <Text style={styles.logoFG}>FG</Text>
+          </View>
+          <View style={styles.logoTextColumn}>
+            <Text style={styles.logoText}>FOCUSGUARD</Text>
+            <View style={styles.logoTag}>
+              <Text style={styles.logoTagText}>⏰ ALARM</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>ALARM</Text>
+          <View style={styles.headerAccent} />
+        </View>
+
+        {/* STATS CARD */}
+        <View style={styles.statsCard}>
+          <View style={[styles.statBox, { backgroundColor: NEO_ORANGE }]}>
+            <Text style={styles.statLabel}>ACTIVE</Text>
+            <Text style={styles.statValue}>
+              {activeCount.toString().padStart(2, '0')}
+            </Text>
+          </View>
+
+          <View style={[styles.statBox, { backgroundColor: NEO_GREEN }]}>
+            <Text style={styles.statLabel}>NEXT</Text>
+            <Text style={styles.statValue}>
+              {nextAlarmTime === 'Disabled' || nextAlarmTime === '--'
+                ? '--'
+                : nextAlarmTime.replace('In ', '')}
+            </Text>
+          </View>
+
+          <View style={[styles.statBox, { backgroundColor: NEO_PURPLE }]}>
+            <Text style={styles.statLabel}>TOTAL</Text>
+            <Text style={styles.statValue}>
+              {totalCount.toString().padStart(2, '0')}
+            </Text>
+          </View>
+        </View>
+
+        {/* INSTRUCTION STRIP */}
+        <View style={styles.instructionStrip}>
+          <Text style={styles.instructionText}>
+            YOUR ALARMS // TAP TO EDIT // LONG PRESS TO DELETE
+          </Text>
+        </View>
+
+        {/* ALARMS LIST */}
         {alarms.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>⏰</Text>
