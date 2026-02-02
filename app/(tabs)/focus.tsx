@@ -385,7 +385,8 @@ export default function FocusModeScreen() {
             // Record in planner task if linked
             if (activeTask && pTaskId && pDate) {
                 try {
-                    recordTaskSession(pTaskId, pDate, activeTask.currentSessionIndex, completionRating, focusMinutes);
+                    const sessionIndex = activeTask.currentSessionIndex ?? 0;
+                    recordTaskSession(pTaskId, pDate, sessionIndex, completionRating, focusMinutes);
                 } catch (error) {
                     console.error('Error recording task session:', error);
                 }
@@ -401,7 +402,8 @@ export default function FocusModeScreen() {
             // Record in planner task if linked
             if (activeTask && pTaskId && pDate) {
                 try {
-                    recordTaskSession(pTaskId, pDate, activeTask.currentSessionIndex, 0, focusMinutes);
+                    const sessionIndex = activeTask.currentSessionIndex ?? 0;
+                    recordTaskSession(pTaskId, pDate, sessionIndex, 0, focusMinutes);
                 } catch (error) {
                     console.error('Error recording task session:', error);
                 }
