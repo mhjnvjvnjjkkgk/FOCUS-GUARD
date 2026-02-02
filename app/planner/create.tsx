@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { usePlannerStore } from '@/store/plannerStore';
+import { useReminderStore } from '@/store/reminderStore';
 
 // ============================================
 // DESIGN SYSTEM: CONTROL PANEL
@@ -76,37 +77,91 @@ const CPTimeMatrix = ({
     startH, startM, endH, endM,
     setStartH, setStartM, setEndH, setEndM
 }: any) => {
+    // Internal 12-hour display states
+    const [startPeriod, setStartPeriod] = useState<'AM' | 'PM'>(startH >= 12 ? 'PM' : 'AM');
+    const [endPeriod, setEndPeriod] = useState<'AM' | 'PM'>(endH >= 12 ? 'PM' : 'AM');
 
-    const Adjuster = ({ val, setVal, max, label }: any) => (
-        <View style={styles.adjusterCol}>
-            {/* UP */}
-            <Pressable
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setVal(val + 1 > max ? 0 : val + 1);
-                }}
-                style={({ pressed }) => [styles.arrowBtn, pressed && { backgroundColor: 'black' }]}
-            >
-                {({ pressed }) => <Ionicons name="caret-up" size={16} color={pressed ? 'white' : 'black'} />}
-            </Pressable>
+    // Convert 24h to 12h for display
+    const display12H = (hour24: number) => {
+        if (hour24 === 0) return 12;
+        if (hour24 > 12) return hour24 - 12;
+        return hour24;
+    };
 
-            {/* VALUE */}
-            <View style={styles.valueBox}>
-                <Text style={styles.valueText}>{val.toString().padStart(2, '0')}</Text>
-                <Text style={styles.valueLabel}>{label}</Text>
+    // Convert 12h to 24h for storage
+    const to24H = (hour12: number, period: 'AM' | 'PM') => {
+        if (period === 'AM') {
+            return hour12 === 12 ? 0 : hour12;
+        } else {
+            return hour12 === 12 ? 12 : hour12 + 12;
+        }
+    };
+
+    const Adjuster = ({ val, setVal, max, label, is12Hour = false, period, setPeriod }: any) => {
+        const displayVal = is12Hour ? display12H(val) : val;
+        const displayMax = is12Hour ? 12 : max;
+
+        const handleIncrement = () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (is12Hour) {
+                const newDisplay = displayVal + 1 > displayMax ? 1 : displayVal + 1;
+                setVal(to24H(newDisplay, period));
+            } else {
+                setVal(val + 1 > max ? 0 : val + 1);
+            }
+        };
+
+        const handleDecrement = () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (is12Hour) {
+                const newDisplay = displayVal - 1 < 1 ? displayMax : displayVal - 1;
+                setVal(to24H(newDisplay, period));
+            } else {
+                setVal(val - 1 < 0 ? max : val - 1);
+            }
+        };
+
+        return (
+            <View style={styles.adjusterCol}>
+                {/* UP */}
+                <Pressable
+                    onPress={handleIncrement}
+                    style={({ pressed }) => [styles.arrowBtn, pressed && { backgroundColor: 'black' }]}
+                >
+                    {({ pressed }) => <Ionicons name="caret-up" size={16} color={pressed ? 'white' : 'black'} />}
+                </Pressable>
+
+                {/* VALUE */}
+                <View style={styles.valueBox}>
+                    <Text style={styles.valueText}>{displayVal.toString().padStart(2, '0')}</Text>
+                    <Text style={styles.valueLabel}>{label}</Text>
+                </View>
+
+                {/* DOWN */}
+                <Pressable
+                    onPress={handleDecrement}
+                    style={({ pressed }) => [styles.arrowBtn, pressed && { backgroundColor: 'black' }]}
+                >
+                    {({ pressed }) => <Ionicons name="caret-down" size={16} color={pressed ? 'white' : 'black'} />}
+                </Pressable>
             </View>
+        );
+    };
 
-            {/* DOWN */}
-            <Pressable
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setVal(val - 1 < 0 ? max : val - 1);
-                }}
-                style={({ pressed }) => [styles.arrowBtn, pressed && { backgroundColor: 'black' }]}
-            >
-                {({ pressed }) => <Ionicons name="caret-down" size={16} color={pressed ? 'white' : 'black'} />}
-            </Pressable>
-        </View>
+    const PeriodToggle = ({ period, setPeriod, onChange24H }: any) => (
+        <Pressable
+            onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                const newPeriod = period === 'AM' ? 'PM' : 'AM';
+                setPeriod(newPeriod);
+                onChange24H(newPeriod);
+            }}
+            style={styles.periodToggle}
+        >
+            <Text style={[styles.periodText, period === 'AM' && styles.periodActive]}> AM </Text>
+            <View style={styles.periodDivider} />
+            <Text style={[styles.periodText, period === 'PM' && styles.periodActive]}> PM </Text>
+        </Pressable>
     );
 
     return (
@@ -117,12 +172,12 @@ const CPTimeMatrix = ({
             <View style={styles.readoutRow}>
                 <View style={styles.readoutBox}>
                     <Text style={styles.readoutText}>
-                        START: {startH.toString().padStart(2, '0')}:{startM.toString().padStart(2, '0')}
+                        START: {display12H(startH).toString().padStart(2, '0')}:{startM.toString().padStart(2, '0')} {startPeriod}
                     </Text>
                 </View>
                 <View style={styles.readoutBox}>
                     <Text style={styles.readoutText}>
-                        END: {endH.toString().padStart(2, '0')}:{endM.toString().padStart(2, '0')}
+                        END: {display12H(endH).toString().padStart(2, '0')}:{endM.toString().padStart(2, '0')} {endPeriod}
                     </Text>
                 </View>
             </View>
@@ -136,17 +191,27 @@ const CPTimeMatrix = ({
 
                 <View style={styles.matrixRow}>
                     {/* START GROUP */}
-                    <Adjuster val={startH} setVal={setStartH} max={23} label="HR" />
+                    <Adjuster val={startH} setVal={setStartH} max={23} label="HR" is12Hour period={startPeriod} setPeriod={setStartPeriod} />
                     <Text style={styles.colon}>:</Text>
                     <Adjuster val={startM} setVal={setStartM} max={59} label="MIN" />
+                    <PeriodToggle
+                        period={startPeriod}
+                        setPeriod={setStartPeriod}
+                        onChange24H={(newPeriod: 'AM' | 'PM') => setStartH(to24H(display12H(startH), newPeriod))}
+                    />
 
                     {/* DIVIDER */}
                     <View style={styles.verticalDivider} />
 
                     {/* END GROUP */}
-                    <Adjuster val={endH} setVal={setEndH} max={23} label="HR" />
+                    <Adjuster val={endH} setVal={setEndH} max={23} label="HR" is12Hour period={endPeriod} setPeriod={setEndPeriod} />
                     <Text style={styles.colon}>:</Text>
                     <Adjuster val={endM} setVal={setEndM} max={59} label="MIN" />
+                    <PeriodToggle
+                        period={endPeriod}
+                        setPeriod={setEndPeriod}
+                        onChange24H={(newPeriod: 'AM' | 'PM') => setEndH(to24H(display12H(endH), newPeriod))}
+                    />
                 </View>
             </View>
         </View>
@@ -215,7 +280,8 @@ const CPBreakSelector = ({ value, onChange }: any) => (
 
 export default function CreateTaskScreen() {
     const { date } = useLocalSearchParams<{ date: string }>();
-    const { createTask } = usePlannerStore(); // Use store logic
+    const { createTask } = usePlannerStore();
+    const { addReminder } = useReminderStore();
 
     // Form State
     const [name, setName] = useState('');
@@ -265,6 +331,29 @@ export default function CreateTaskScreen() {
             },
             alarmEnabled: true,
             reminderMinutesBefore: 10,
+        });
+
+        // Auto-create reminder 10 minutes before task start
+        const reminderDate = new Date(`${date || new Date().toISOString().split('T')[0]}T${startH.toString().padStart(2, '0')}:${startM.toString().padStart(2, '0')}:00`);
+        reminderDate.setMinutes(reminderDate.getMinutes() - 10); // 10 min before
+
+        addReminder({
+            title: name.trim(),
+            message: `Your task "${name.trim()}" starts in 10 minutes`,
+            subtitle: 'Time to prepare!',
+            icon: '⏰',
+            color: '#00FFFF', // Cyan
+            schedule: {
+                type: 'once',
+                date: date || new Date().toISOString().split('T')[0],
+                time: {
+                    hour: reminderDate.getHours(),
+                    minute: reminderDate.getMinutes()
+                },
+            },
+            category: 'productivity',
+            isFavorite: false,
+            enabled: true,
         });
 
         router.back();
@@ -614,5 +703,33 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: CP.colors.black,
         letterSpacing: 2,
+    },
+
+    // PERIOD TOGGLE STYLES
+    periodToggle: {
+        flexDirection: 'row',
+        height: 80,
+        width: 60,
+        borderWidth: CP.border,
+        borderColor: CP.colors.black,
+        backgroundColor: CP.colors.white,
+        marginLeft: 6,
+    },
+    periodText: {
+        flex: 1,
+        textAlign: 'center',
+        textAlignVertical: 'center',
+        fontSize: 10,
+        fontWeight: '900',
+        color: CP.colors.textGray,
+        paddingVertical: 8,
+    },
+    periodActive: {
+        color: CP.colors.black,
+        backgroundColor: CP.colors.cyan,
+    },
+    periodDivider: {
+        width: 1,
+        backgroundColor: CP.colors.black,
     },
 });
