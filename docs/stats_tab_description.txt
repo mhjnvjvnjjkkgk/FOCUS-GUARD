@@ -1,0 +1,246 @@
+# FocusGuard - Statistics Tab UI Description
+
+## Overview
+
+The Statistics tab serves as the comprehensive analytics dashboard for the FocusGuard application, providing users with detailed insights into their productivity, focus habits, and gamification progress. This data-rich screen aggregates information from all other features—alarms, focus sessions, tasks, and blockers—into a cohesive visual representation of the user's performance. The tab is distinguished by a cyan/blue accent color and features a bar chart icon in the bottom navigation bar.
+
+## Header Section
+
+The screen displays "📊 Statistics" with a bar chart emoji in the header, immediately communicating the analytical nature of this feature. The header maintains visual consistency with the rest of the application, adapting to light and dark color schemes seamlessly.
+
+## Period Selector
+
+At the top of the content area, a segmented control allows users to filter statistics by time period.
+
+### Selector Design
+
+- **Container**: Rounded pill-shaped background in light gray (dark gray in dark mode)
+- **Inner Padding**: 4-pixel padding creates a subtle inset effect
+- **Three Options**: "Day", "Week", and "Month" buttons
+
+### Button States
+
+- **Inactive**: Gray text on transparent background
+- **Active**: Bold text on white background with subtle shadow, creating a "raised" effect
+- **Haptic Feedback**: Light impact when switching periods
+
+## Main Stats Grid
+
+A 2x2 grid of stat cards provides quick access to the most important metrics.
+
+### Stat Card Design
+
+Each stat card features:
+- **Dimensions**: Half screen width minus padding
+- **Background**: White in light mode, dark purple-tinted (#1a1a2e) in dark mode
+- **Border Radius**: Extra-large (2xl) for modern rounded corners
+- **Shadow**: Large shadow for depth and elevation
+- **Padding**: Generous internal spacing for readability
+
+### Displayed Metrics
+
+1. **Focus Time** (Timer icon, Orange)
+   - Total minutes spent in focus sessions
+   - Formatted as "Xh Ym" or "Xm" depending on duration
+
+2. **Net Points** (Trophy icon, Amber)
+   - Total points earned minus deductions
+   - Trend indicator showing percentage change from previous period (up arrow for positive, down for negative)
+
+3. **Completion Rate** (Checkmark icon, Green)
+   - Percentage of started sessions completed
+   - Label shows ratio (e.g., "Rate (5/6)")
+
+4. **Alarms/Reminders** (Alarm icon, Purple)
+   - Total alarms that triggered in the period
+   - Combined count of on-time and snoozed alarms
+
+### Trend Badge
+
+The Net Points card includes a trend badge when comparing to the previous period:
+- Green background with up arrow for improvement
+- Red background with down arrow for decline
+- Shows percentage change (e.g., "+15%" or "-8%")
+
+## Focus Time Chart
+
+A visual bar chart displays focus time distribution across the selected period.
+
+### Chart Card Design
+
+- **Title**: "Focus Time" with total time as subtitle
+- **Background**: Premium card styling with shadows
+- **Height**: 140-pixel chart container
+
+### Bar Chart Component
+
+For weekly view:
+- Seven bars representing each day (Sun-Sat)
+- Bar height proportional to focus minutes
+- Orange color matching the focus feature
+- Value labels above each bar
+- Day labels below each bar
+
+For daily view:
+- Six hourly segments (6am, 9am, 12pm, 3pm, 6pm, 9pm)
+- Shows focus distribution throughout the day
+
+Bar styling includes:
+- 6-pixel rounded corners
+- Minimum height of 4 pixels even for zero values
+- Proportional scaling based on maximum value
+
+## Points Breakdown Section
+
+A detailed breakdown shows how points were earned and lost.
+
+### Card Design
+
+- **Title**: "Points Breakdown" in bold 16-pixel text
+- **Three-column layout**: Earned, Deducted, Net
+
+### Breakdown Items
+
+Each column displays:
+- **Colored Dot**: 8x8 pixel indicator (green, red, or blue)
+- **Label**: Category name in secondary text
+- **Value**: Large 18-pixel bold number with +/- prefix
+
+Values shown:
+- **Earned** (Green): Total points gained with + prefix
+- **Deducted** (Red): Points lost with - prefix
+- **Net** (Stats Blue): Final balance
+
+## Alarm Points Breakdown Section
+
+A dedicated section shows alarm-specific point activity.
+
+### Card Header
+
+- **Title**: "⏰ Alarm Points" with alarm emoji
+- **Subtitle**: Total alarm count (e.g., "8 alarms")
+
+### Breakdown Columns
+
+1. **On Time** (Green)
+   - Points earned from waking without snooze
+   - Sub-label shows alarm count
+
+2. **Snoozed** (Red)
+   - Points deducted from snoozing
+   - Sub-label shows snooze count
+
+3. **Net** (Alarm Orange)
+   - Net alarm points with +/- prefix
+
+## Insights Section
+
+Dynamic insight cards provide personalized feedback based on user performance.
+
+### Card Design
+
+- **Header**: Lightbulb icon (amber) with "Insights" title
+- **Background**: Premium card with rounded corners and shadow
+
+### Insight Items
+
+Each insight displays:
+- **Emoji**: Contextual emoji (🎯 for sessions, ⭐ for points, ⏰ for alarms, 🔥 for streaks)
+- **Text**: Descriptive phrase
+- **Highlight**: Key metric in bold (e.g., "5 focus sessions", "50 points")
+
+Generated insights include:
+- Session completion count
+- Points earned/lost
+- Alarm on-time percentage
+- Current streak duration
+
+Insights only appear when relevant data exists.
+
+## Achievements Section
+
+A list of gamification achievements shows progress and unlocks.
+
+### Section Design
+
+- **Title**: "Achievements" in section header style
+- **List Container**: Rounded card containing achievement items
+
+### Achievement Item Design
+
+Each achievement displays:
+- **Icon Badge**: Emoji in a rounded container (dimmed if locked)
+- **Title**: Achievement name (dim if locked)
+- **Description**: How to earn the achievement
+- **Progress Bar**: Visual fill showing completion percentage (only for locked achievements)
+- **Checkmark**: Green checkmark icon for unlocked achievements
+
+Achievement categories:
+- Focus achievements (total focus time milestones)
+- Streak achievements (consecutive day goals)
+- Points achievements (total points earned)
+- Task achievements (tasks completed)
+
+Up to 6 achievements are displayed with progress tracking.
+
+## All-Time Stats Card
+
+A summary card shows lifetime statistics since the user started using the app.
+
+### Stats Grid
+
+Four metrics displayed in a 2x2 grid:
+
+1. **Total Focus** (Orange)
+   - Cumulative focus time ever
+   - Formatted as hours and minutes
+
+2. **Points Earned** (Amber)
+   - Lifetime points accumulated
+
+3. **Sessions** (Green)
+   - Total focus sessions completed
+
+4. **Best Streak** (Cyan)
+   - Longest consecutive day streak achieved
+
+### Card Styling
+
+- Premium background with shadows
+- Large 24-pixel values with small 11-pixel labels
+- Color-coded values matching their features
+
+## Animation and Interaction
+
+The Statistics tab features sophisticated entry animations:
+
+- **Period Selector**: Fades in from above (100ms delay)
+- **Stats Grid**: Fades in from above (150ms delay)
+- **Chart Card**: Fades in from below (200ms delay)
+- **Points Breakdown**: Fades in from below (250ms delay)
+- **Alarm Points**: Fades in from below (275ms delay)
+- **Insights**: Fades in from below (300ms delay)
+- **Achievements**: Fades in from below (350ms delay)
+- **All-Time Stats**: Fades in from below (400ms delay)
+
+Each animation uses spring physics for a natural, bouncy feel.
+
+## Theme Support
+
+The Statistics tab fully supports both light and dark color schemes:
+
+- **Light Mode**: White card backgrounds, dark text, subtle gray progress bars
+- **Dark Mode**: Deep charcoal backgrounds (#1a1a2e), light text, adjusted chart colors
+
+All color transitions are handled smoothly for a consistent experience.
+
+## Data Sources
+
+The Statistics tab aggregates data from:
+- Points Store (gamification data)
+- Planner Store (task completion data)
+- Alarm Store (alarm trigger data)
+
+This creates a holistic view of user productivity across all FocusGuard features.
+
+This comprehensive statistics interface provides users with the insights they need to understand their productivity patterns, track progress toward goals, and stay motivated through gamification elements like achievements and streak tracking.

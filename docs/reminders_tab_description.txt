@@ -1,0 +1,122 @@
+# FocusGuard - Reminders Tab UI Description
+
+## Overview
+
+The Reminders tab provides users with a comprehensive interface for creating and managing motivational reminders and notifications. This feature is designed to help users stay inspired, focused, and on track with their goals through personalized messages that appear at scheduled intervals. The tab is distinguished by a pink accent color (#EC4899) and is accessible via the bottom navigation bar with a notification bell icon.
+
+## Header Section
+
+The screen features a clean header displaying "💭 Reminders" with a thought bubble emoji, immediately communicating the purpose of this feature. The header maintains consistency with the rest of the application, adapting its background color based on the device's color scheme—light mode displays a clean white background while dark mode presents a sophisticated charcoal background. The title uses a 600 font weight at 18 pixels, ensuring clarity and readability.
+
+## Statistics Card
+
+Prominently positioned at the top of the content area, a statistics card provides users with an instant overview of their reminder status. This card features rounded corners, subtle shadows, and a clean design that aligns with the premium aesthetic of the application.
+
+The statistics card is divided into three sections with vertical dividers:
+
+1. **Active**: Displays the count of currently enabled reminders in the feature's signature pink color. This number updates dynamically as users toggle reminders on or off. Below this number, a subtle label reads "Active" to provide context.
+
+2. **Total**: Shows the complete count of all reminders created by the user in green, indicating a positive metric. This includes both active and disabled reminders, giving users a sense of their complete reminder library.
+
+3. **Streak**: Displays the current engagement streak with a fire emoji (🔥) in purple, encouraging consistent interaction with reminders. This gamification element motivates users to maintain regular engagement with their motivational content.
+
+## Reminders List Section
+
+Below the statistics card, the main content area displays a titled section "Your Reminders" with an instructional hint reading "Tap to edit, long press to delete" in secondary text. This guidance ensures intuitive understanding of interaction patterns.
+
+Each reminder is rendered as an individual card featuring a sophisticated and premium design.
+
+### Reminder Card Design
+
+Each reminder card showcases careful attention to visual design:
+
+- **Color Accent Bar**: A 4-pixel vertical colored bar on the left edge of each card that matches the reminder's assigned color, providing instant visual categorization
+- **Premium Card Styling**: White background in light mode, deep purple-tinted background (#1a1a2e) in dark mode
+- **Rounded Corners**: Extra-large border radius for a modern, approachable appearance
+- **Subtle Border**: A faint pink-tinted border that ties back to the reminder feature's theme
+- **Shadow Effects**: Large shadows creating a floating effect above the background
+- **Overflow Hidden**: Content is properly clipped to the rounded corners
+
+### Reminder Card Content
+
+**Icon Badge**: On the left side of the card header, a rounded square badge displays the reminder's chosen emoji icon. The badge background uses a 20% opacity version of the reminder's color, creating a cohesive visual connection. The emoji is displayed at 20 pixels within a 40x40 pixel container.
+
+**Title**: The reminder's title appears prominently in a 17-pixel bold font. The title adapts its color based on the theme and dims when the reminder is disabled.
+
+**Schedule Information**: Directly below the title, a row displays a small clock icon followed by the reminder's schedule in a secondary text style. The schedule is intelligently formatted based on its type:
+- "Daily at 7:00 AM" for daily reminders with a specific time
+- "Every 30 min" for interval-based reminders
+- "Weekly" for weekly reminders
+- "One time" for one-off reminders
+
+**Toggle Switch**: On the right side of the card header, a toggle switch allows quick enabling or disabling of the reminder. The switch uses the reminder's color for the active state, providing visual consistency.
+
+**Message Preview**: Below the header, the reminder's motivational message is displayed in a secondary text color. The preview is limited to two lines with ellipsis truncation, providing a glimpse of the content without overwhelming the card. The text uses a 14-pixel font with 20-pixel line height for comfortable reading.
+
+**Image Preview**: If the reminder includes an attached image, it is displayed below the message in a rounded container. The image spans the full width of the card content and has a fixed height of 120 pixels, with cover resizing to maintain aspect ratio while filling the space.
+
+**Category Badge**: At the bottom of the card, a small badge indicates the reminder's category. The badge features:
+- A category-specific emoji (💪 for Motivation, 📚 for Study, 🧘 for Health, ⏰ for Productivity, 😊 for Positivity, 🎯 for Goals, 🔄 for Habits, ✏️ for Custom)
+- The category name in the category's signature color
+- A background using 15% opacity of the category color
+
+### Available Categories
+
+The Reminders feature supports eight distinct categories, each with its own color scheme:
+
+1. **Motivation** (💪): Orange (#F97316) - For pumping users up
+2. **Study** (📚): Purple (#8B5CF6) - For academic reminders
+3. **Health** (🧘): Green (#10B981) - For wellness tips
+4. **Productivity** (⏰): Blue (#3B82F6) - For efficiency reminders
+5. **Positivity** (😊): Pink (#EC4899) - For uplifting messages
+6. **Goals** (🎯): Indigo (#6366F1) - For goal tracking
+7. **Habits** (🔄): Teal (#14B8A6) - For habit formation
+8. **Custom** (✏️): Slate (#64748B) - For user-defined categories
+
+### Animation and Interaction
+
+- **Entry Animation**: Each reminder card enters with a staggered fade-in-down animation (80ms delay between cards), creating an engaging cascading effect
+- **Press Animation**: When pressed, cards scale down to 0.98 with a snappy spring animation
+- **Haptic Feedback**: Light impact when toggling, warning notification when deleting
+- **Long Press Detection**: 500ms delay before triggering delete action
+
+## Empty State
+
+When no reminders exist, an encouraging empty state is displayed:
+
+- **Large Emoji**: An 80-pixel thought bubble emoji (💭) centered on screen
+- **Title**: "No Reminders Yet" in a bold 22-pixel font
+- **Description**: "Create your first motivational reminder to stay inspired" in secondary text with horizontal padding for comfortable reading
+- **Action Button**: A prominent pink button with fully rounded corners, featuring a plus icon and "Create Reminder" text, inviting users to create their first reminder
+
+## Floating Action Button
+
+A floating action button (FAB) is permanently positioned in the bottom-right corner of the screen. This 60x60 pixel circular button features:
+
+- **Pink Background**: Matches the reminder feature's accent color
+- **Plus Icon**: A white 28-pixel plus icon clearly indicating the add action
+- **Shadow Effects**: Large shadows for depth and visibility
+- **Press Animation**: Scales to 0.95 when pressed for tactile feedback
+
+Tapping this button navigates users to the reminder creation screen, triggering a medium haptic impact for confirmation.
+
+## Theme Support
+
+The Reminders tab fully supports both light and dark color schemes:
+
+- **Light Mode**: Clean white card backgrounds, dark primary text, subtle gray borders and secondary text
+- **Dark Mode**: Deep charcoal backgrounds (#1a1a2e), light primary text, adjusted border colors for visibility, muted secondary text
+
+All theme transitions are handled gracefully, and disabled reminders are visually distinguished with 50% opacity, indicating their inactive state.
+
+## Navigation and Integration
+
+The Reminders tab integrates seamlessly with the FocusGuard ecosystem:
+
+- Tapping a reminder card navigates to the edit screen for that specific reminder
+- Long-pressing triggers a delete action with appropriate warning haptic
+- The tab icon in the bottom navigation appears filled when selected, outlined otherwise
+- A pink accent dot appears below the icon when the tab is active
+- Points are awarded for engaging with reminders and maintaining streaks
+
+This comprehensive reminder management interface ensures users can create, organize, and maintain their motivational content library, supporting their journey toward better productivity and personal growth.

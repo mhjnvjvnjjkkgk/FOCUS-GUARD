@@ -1,0 +1,186 @@
+# FocusGuard - Blocker Tab UI Description
+
+## Overview
+
+The Blocker tab provides users with powerful app usage management capabilities, allowing them to set daily limits on distracting applications and receive reminders when they exceed their allocated time. This feature is essential for users seeking to reduce their screen time on specific applications. The tab is distinguished by a teal accent color (#14B8A6) and features a shield icon in the bottom navigation bar, symbolizing protection from digital distractions.
+
+## Header Section
+
+The screen displays "🛡️ App Blocker" in the header with a shield emoji, immediately communicating the protective nature of this feature. The header maintains the application's consistent design language, adapting its background color to match the device's light or dark color scheme.
+
+## Statistics Card
+
+At the top of the content area, a prominently styled statistics card provides users with an at-a-glance summary of their app usage status for the current day.
+
+### Stats Display
+
+The card is divided into three equal sections with vertical dividers:
+
+1. **Used Today**: Displays the total number of minutes spent in tracked apps (teal color). This number aggregates usage across all enabled blocked apps.
+
+2. **Remaining**: Shows the remaining allowed minutes across all tracked apps (green color). If the user has exceeded their limits, this shows "0m".
+
+3. **Blocked**: Indicates how many apps are currently over their daily limit (orange color). When an app reaches its limit, it becomes "blocked."
+
+Each stat features a large 24-pixel bold number above a small 12-pixel label in secondary text.
+
+## Permission Banner
+
+A notification banner appears below the stats card to inform users about necessary system permissions.
+
+### Banner Design
+
+- **Background**: Light blue/primary color tinted background
+- **Icon**: Information circle icon in primary blue
+- **Message**: "Enable usage access to track real app usage"
+- **Action Button**: "Enable" button in primary blue that opens system settings
+
+This banner is critical for the app's functionality, as Android and iOS require special permissions to track usage data from other applications.
+
+## Tracked Apps Section
+
+The main content area displays a list of all apps being monitored, with a section header showing "Tracked Apps" and an active count badge indicating how many apps have tracking enabled.
+
+### App Card Design
+
+Each tracked application is displayed as an individual card with premium styling:
+
+- **Rounded Corners**: Extra-large border radius for a modern appearance
+- **Shadows**: Subtle shadows for depth
+- **White Background**: Clean look in light mode, dark gray in dark mode
+- **Blocked State**: When an app is over its limit, a red-tinted border appears
+
+### App Card Content
+
+**Header Row**:
+- **App Icon**: A 44x44 pixel rounded square containing an emoji representation of the app (e.g., 📷 for Instagram, 🐦 for Twitter)
+- **App Name**: Bold 16-pixel text showing the application name
+- **Blocked Badge**: Red "BLOCKED" pill with lock icon appears when over limit
+- **Unlock Task Badge**: Small badge showing the required unlock task (📳 shake, ⌨️ typing, 🧮 math, 🧘 breathing, ⚡ none)
+- **Toggle Switch**: Right-aligned switch to enable/disable tracking for this app, using the blocker's teal accent color
+
+**Usage Bar**:
+When tracking is enabled, a horizontal usage bar appears showing:
+- **Progress Track**: 6-pixel high gray background bar
+- **Usage Fill**: Colored fill showing the percentage of daily limit used
+  - Teal color when under limit
+  - Red color when over limit
+- **Usage Labels**: "Xm / Ym" format on the left, percentage on the right
+
+**Reminder Info** (if enabled):
+- Small notification icon followed by "Reminder every X min"
+- Indicates how often the app will send usage reminders
+
+### Pre-configured Apps
+
+The screen comes with four example tracked apps:
+
+1. **Instagram** (📷)
+   - 30 min daily limit
+   - 45 min used (over limit, BLOCKED)
+   - Shake unlock task
+   - 5 min reminder interval
+
+2. **Twitter** (🐦)
+   - 20 min daily limit
+   - 12 min used (under limit)
+   - Typing unlock task
+   - 10 min reminder interval
+
+3. **YouTube** (📺)
+   - 60 min daily limit
+   - 35 min used (under limit)
+   - Math unlock task
+   - 15 min reminder interval
+
+4. **TikTok** (🎵)
+   - 15 min daily limit
+   - 0 min used (tracking disabled)
+   - No unlock task
+
+### Unlock Task Types
+
+Each app can have an unlock task that users must complete before accessing the app after reaching their limit:
+
+- **None** (⚡): No task required
+- **Shake** (📳): User must shake their device
+- **Typing** (⌨️): User must type a predetermined phrase
+- **Math** (🧮): User must solve a math problem
+- **Breathing** (🧘): User must complete a breathing exercise
+
+### Animation and Interaction
+
+- **Entry Animation**: Cards enter with staggered fade-in-down animations (60ms delay between cards)
+- **Press Animation**: Spring scale effect (0.98) when pressed
+- **Haptic Feedback**: Light impact when toggling switches
+
+## Quick Actions Section
+
+Below the tracked apps, a grid of quick action buttons provides easy access to common functions.
+
+### Action Cards Grid
+
+Four 2x2 action cards are displayed:
+
+1. **Pause All** (Orange pause icon)
+   - Temporarily disables all app tracking
+
+2. **View Stats** (Purple analytics icon)
+   - Opens detailed usage statistics
+
+3. **Schedule** (Green calendar icon)
+   - Creates time-based blocking schedules
+
+4. **Settings** (Gray settings icon)
+   - Opens blocker configuration options
+
+### Action Card Design
+
+Each action card features:
+- Approximately 47% width (two per row with gap)
+- Rounded corners (xl border radius)
+- Centered icon (28 pixels) above the label
+- Subtle shadow for depth
+- Light haptic feedback on press
+
+## Floating Action Button
+
+A floating action button (FAB) is positioned in the bottom-right corner of the screen for adding new apps to track.
+
+### FAB Design
+
+- **Size**: 60x60 pixels with fully rounded corners (circular)
+- **Background**: Blocker's teal accent color
+- **Icon**: White plus icon (28 pixels)
+- **Shadow**: Large shadow for elevation
+- **Press Effect**: Scales to 0.95 when pressed
+- **Navigation**: Opens the add-app screen
+
+## Theme Support
+
+The Blocker tab fully supports both light and dark color schemes:
+
+- **Light Mode**: White card backgrounds, dark text, gray usage bar tracks
+- **Dark Mode**: Dark gray backgrounds (#1a1a2e), light text, adjusted stat dividers
+
+All color transitions are handled smoothly to ensure a consistent experience.
+
+## Blocked State Visual Feedback
+
+When an app exceeds its daily limit, several visual changes occur:
+
+- The app card receives a red-tinted border (40% opacity)
+- A red "BLOCKED" badge appears with a lock icon
+- The usage bar fill turns red
+- The percentage text turns red
+- The remaining time shows as exceeded
+
+## Integration with Gamification
+
+The Blocker tab integrates with the FocusGuard points system:
+
+- Users earn points for staying under their app limits
+- Points are deducted for exceeding daily limits
+- Completing unlock tasks can provide small point bonuses
+
+This comprehensive app blocking interface empowers users to take control of their digital habits, reduce distracting app usage, and build healthier screen time behaviors through limits, reminders, and unlock challenges.

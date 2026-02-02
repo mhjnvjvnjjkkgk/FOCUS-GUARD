@@ -1,0 +1,1459 @@
+================================================================================
+                       FOCUSGUARD - COMPLETE APP SPECIFICATION
+                    MASTER PROMPT FOR AI-ASSISTED DEVELOPMENT
+================================================================================
+
+IMPORTANT INSTRUCTIONS FOR AI:
+Before you begin implementing this application, you MUST follow these steps:
+1. Read this entire document carefully to understand the full scope
+2. Create separate specification files for each module in a "specs/" folder
+3. Save each segment's description to its own file before implementing
+4. Implement one module at a time, completing and testing each before moving on
+5. Reference the stored specification files during implementation
+6. Do NOT attempt to implement everything at once - work incrementally
+
+================================================================================
+                            SECTION 1: APP OVERVIEW
+================================================================================
+
+FocusGuard is a comprehensive productivity and wellness mobile application built with React Native and Expo. The app is designed to help users build better habits, improve focus, and reduce digital distractions through an integrated suite of tools including smart alarms, motivational reminders, focus mode sessions, app blocking, day planning, and gamified progress tracking.
+
+The core philosophy of FocusGuard is to make productivity feel rewarding and addictive through a sophisticated points system, achievements, streaks, and beautiful animations. Every interaction should feel premium, polished, and satisfying.
+
+TARGET AUDIENCE:
+- Students preparing for exams who need structured study schedules
+- Professionals seeking to improve their work-life balance
+- Anyone struggling with smartphone addiction or procrastination
+- Users who want to build and maintain productive habits
+- People who respond well to gamification and visible progress tracking
+
+CORE VALUE PROPOSITIONS:
+1. Integrated Experience: All productivity tools work together seamlessly
+2. Gamification: Points, streaks, achievements, and leaderboards make productivity fun
+3. Premium Design: Beautiful dark mode UI with smooth animations throughout
+4. Smart Features: AI-powered insights and personalized recommendations
+5. Flexibility: Highly customizable to fit any lifestyle or schedule
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/00-app-overview.md" and save this overview section. This file should serve as the foundational reference for understanding the app's purpose and target audience.
+
+================================================================================
+                          SECTION 2: TECHNOLOGY STACK
+================================================================================
+
+FRAMEWORK AND RUNTIME:
+- React Native 0.74+ (latest stable version)
+- Expo SDK 51+ (managed workflow for rapid development)
+- TypeScript (strict mode enabled for type safety)
+- Node.js 18+ LTS
+
+NAVIGATION:
+- Expo Router (file-based routing system)
+- Stack navigation for modal screens and detail views
+- Tab navigation for main app sections (5 tabs)
+- Deep linking support for notifications
+
+STATE MANAGEMENT:
+- Zustand (lightweight, fast, and TypeScript-friendly)
+- Persist middleware with AsyncStorage for data persistence
+- MMKV storage for high-performance data (optional upgrade)
+- Separate stores for each major feature domain
+
+UI AND STYLING:
+- React Native StyleSheet API (no external CSS frameworks)
+- React Native Reanimated 3 for smooth 60fps animations
+- React Native Gesture Handler for touch interactions
+- Expo Linear Gradient for gradient backgrounds
+- Custom design tokens system (colors, spacing, typography)
+- Dark mode as default with optional light mode support
+
+DEVICE FEATURES:
+- Expo Notifications for local and push notifications
+- Expo Haptics for tactile feedback on interactions
+- Expo Audio for alarm sounds and ambient audio
+- Expo Sensors (Accelerometer) for shake detection
+- Expo Image Picker for custom reminder images
+- Expo File System for local file storage
+- Expo Sharing for social sharing features
+
+ICONS AND FONTS:
+- @expo/vector-icons (Ionicons primarily)
+- Expo Google Fonts (Inter, Roboto, or similar modern fonts)
+- Custom emoji usage for visual appeal
+
+DEVELOPMENT TOOLS:
+- ESLint with React Native configuration
+- Prettier for code formatting
+- TypeScript strict null checks
+- Expo Dev Client for debugging
+
+PROJECT STRUCTURE:
+```
+FocusGuard/
+├── app/                    # Expo Router file-based routes
+│   ├── (tabs)/            # Tab navigation group
+│   │   ├── _layout.tsx    # Tab bar configuration
+│   │   ├── index.tsx      # Home/Dashboard (redirects to focus)
+│   │   ├── focus.tsx      # Focus Mode main screen
+│   │   ├── planner.tsx    # Day Planner
+│   │   ├── reminders.tsx  # Reminders list
+│   │   └── stats.tsx      # Statistics dashboard
+│   ├── alarm/             # Alarm-related screens
+│   │   ├── [id].tsx       # Edit alarm screen
+│   │   └── ringing.tsx    # Alarm ringing screen
+│   ├── blocker/           # App blocker screens
+│   │   ├── add-app.tsx    # Add apps to block
+│   │   └── blocked.tsx    # Blocked app overlay
+│   ├── onboarding/        # First-run experience
+│   │   └── index.tsx      # Onboarding slides
+│   ├── planner/           # Planner sub-screens
+│   │   ├── create.tsx     # Create/edit task
+│   │   └── summary.tsx    # Daily summary
+│   ├── reminder/          # Reminder sub-screens
+│   │   └── create.tsx     # Create/edit reminder
+│   ├── settings/          # Settings screens
+│   │   └── index.tsx      # Main settings
+│   └── _layout.tsx        # Root layout
+├── components/            # Reusable UI components
+│   ├── ui/               # Generic UI components
+│   └── features/         # Feature-specific components
+├── constants/             # App constants
+│   └── Theme.ts          # Design tokens
+├── hooks/                 # Custom React hooks
+├── store/                 # Zustand stores
+│   ├── alarmStore.ts
+│   ├── blockerStore.ts
+│   ├── focusStore.ts
+│   ├── plannerStore.ts
+│   ├── pointsStore.ts
+│   └── reminderStore.ts
+├── utils/                 # Utility functions
+└── assets/               # Static assets
+    ├── sounds/           # Audio files
+    ├── images/           # Image assets
+    └── fonts/            # Custom fonts
+```
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/01-technology-stack.md" and save all technology stack details, project structure, and dependency information. Reference this when setting up the project or adding new dependencies.
+
+================================================================================
+                     SECTION 3: DESIGN SYSTEM SPECIFICATION
+================================================================================
+
+The design system is the foundation of FocusGuard's premium look and feel. Every screen must adhere to these specifications to maintain visual consistency.
+
+COLOR PALETTE:
+
+Primary Background Colors (Dark Mode):
+- Background Primary: #1a1a2e (deep navy/purple)
+- Background Secondary: #16213e (slightly lighter navy)
+- Background Tertiary: #0f3460 (accent background)
+
+Gray Scale for Text and Borders:
+- Gray 900: #111827 (almost black)
+- Gray 800: #1f2937 (very dark gray)
+- Gray 700: #374151 (dark gray for elevated surfaces)
+- Gray 600: #4b5563 (medium gray for borders)
+- Gray 500: #6b7280 (medium gray for secondary text)
+- Gray 400: #9ca3af (light gray for tertiary text)
+- Gray 300: #d1d5db (lighter gray)
+- Gray 200: #e5e7eb (very light gray for backgrounds in light mode)
+- Gray 100: #f3f4f6 (almost white)
+
+Accent Colors:
+- Accent Green: #10b981 (success, completion, positive)
+- Accent Red: #ef4444 (danger, alerts, negative)
+- Accent Amber: #f59e0b (warning, in-progress)
+- Accent Orange: #f97316 (streak, energy)
+- Accent Purple: #8b5cf6 (premium, special)
+- Accent Blue: #3b82f6 (information)
+- Accent Pink: #ec4899 (highlights)
+- Accent Teal: #14b8a6 (alternative success)
+
+Feature-Specific Colors (Each feature has a primary, light, and dark variant):
+- Alarm: Primary #f97316 (orange), Light #fff7ed, Dark #ea580c
+- Reminder: Primary #ec4899 (pink), Light #fdf2f8, Dark #db2777
+- Focus: Primary #3b82f6 (blue), Light #eff6ff, Dark #2563eb
+- Blocker: Primary #ef4444 (red), Light #fef2f2, Dark #dc2626
+- Stats: Primary #8b5cf6 (purple), Light #f5f3ff, Dark #7c3aed
+- Planner: Primary #06b6d4 (cyan), Light #ecfeff, Dark #0891b2
+
+Text Colors:
+- Text Primary: #111827 (light mode) / #ffffff (dark mode)
+- Text Secondary: #6b7280 (light mode) / #9ca3af (dark mode)
+- Text Tertiary: #9ca3af (light mode) / #6b7280 (dark mode)
+- Text Inverse: #ffffff (for use on dark backgrounds in light mode)
+
+SPACING SCALE (in pixels):
+- Spacing[0]: 0
+- Spacing[1]: 4
+- Spacing[2]: 8
+- Spacing[3]: 12
+- Spacing[4]: 16
+- Spacing[5]: 20
+- Spacing[6]: 24
+- Spacing[7]: 28
+- Spacing[8]: 32
+- Spacing[9]: 36
+- Spacing[10]: 40
+- Spacing[12]: 48
+- Spacing[16]: 64
+
+BORDER RADIUS SCALE:
+- none: 0
+- sm: 4
+- md: 8
+- lg: 12
+- xl: 16
+- 2xl: 24
+- 3xl: 32
+- full: 9999
+
+SHADOW DEFINITIONS (for elevated surfaces):
+- Shadow sm: offset(0,1), blur(2), opacity(0.05)
+- Shadow md: offset(0,4), blur(6), opacity(0.07)
+- Shadow lg: offset(0,10), blur(15), opacity(0.1)
+- Shadow xl: offset(0,20), blur(25), opacity(0.15)
+
+TYPOGRAPHY:
+- Heading 1: 32px, weight 700
+- Heading 2: 24px, weight 700
+- Heading 3: 20px, weight 600
+- Body Large: 18px, weight 400
+- Body: 16px, weight 400
+- Body Small: 14px, weight 400
+- Caption: 12px, weight 400
+- Micro: 11px, weight 400
+
+ANIMATION PRINCIPLES:
+1. Use spring animations for natural feel (damping: 15, stiffness: 150)
+2. Standard duration: 200-300ms for UI transitions
+3. All buttons should have scale feedback on press (0.97 scale)
+4. Cards should have subtle hover/press states
+5. Use FadeIn/FadeInDown/FadeInUp from reanimated for enter animations
+6. Stagger animations for lists (50-100ms delay between items)
+7. Progress indicators should animate smoothly, never jump
+
+HAPTIC FEEDBACK PATTERNS:
+- Light: For small interactions (button taps, toggles)
+- Medium: For confirmations and selections
+- Heavy: For important actions (completing tasks, unlocking)
+- Success: For positive outcomes (task complete, goal reached)
+- Warning: For alerts (time running out)
+- Error: For mistakes (wrong answer in math task)
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/02-design-system.md" and save all color values, spacing scales, typography definitions, and animation principles. This file must be referenced for every UI component implementation.
+
+================================================================================
+                    SECTION 4: ALARM CLOCK MODULE SPECIFICATION
+================================================================================
+
+The Alarm Clock is a core feature that helps users wake up purposefully. Unlike standard alarm apps, FocusGuard requires users to complete "dismiss tasks" to turn off the alarm, ensuring they are fully awake.
+
+ALARM DATA MODEL:
+```typescript
+interface Alarm {
+  id: string;                    // Unique identifier (UUID)
+  time: string;                  // "HH:MM" format (24-hour)
+  label: string;                 // Optional user label
+  enabled: boolean;              // Is alarm active?
+  repeatDays: number[];          // 0-6 (Sunday-Saturday), empty = one-time
+  soundUri: string;              // Path to sound file or preset name
+  vibrate: boolean;              // Enable vibration
+  volume: number;                // 0-1 volume level
+  snoozeEnabled: boolean;        // Allow snoozing
+  snoozeDuration: number;        // Minutes per snooze
+  maxSnoozes: number;            // Maximum allowed snoozes (1-5)
+  gradualVolume: boolean;        // Gradually increase volume
+  dismissTask: DismissTask;      // Task required to dismiss
+  createdAt: string;             // ISO timestamp
+  lastTriggered?: string;        // ISO timestamp
+}
+
+interface DismissTask {
+  type: 'none' | 'math' | 'shake' | 'walk' | 'breathing' | 'typing' | 'barcode' | 'photo' | 'puzzle';
+  
+  // Math task settings
+  mathDifficulty?: 'easy' | 'medium' | 'hard' | 'extreme';
+  mathCount?: number;            // 1-10 problems to solve
+  
+  // Shake task settings
+  shakeIntensity?: 'light' | 'medium' | 'vigorous';
+  shakeDuration?: number;        // Seconds of shaking required
+  
+  // Walk task settings
+  walkSteps?: number;            // 10-200 steps required
+  
+  // Breathing task settings
+  breathingCycles?: number;      // 3-10 breath cycles
+  inhaleSeconds?: number;        // 4-8 seconds
+  holdSeconds?: number;          // 0-8 seconds
+  exhaleSeconds?: number;        // 4-8 seconds
+  
+  // Typing task settings
+  typingText?: string;           // Custom phrase to type
+  caseSensitive?: boolean;       // Require exact case match
+}
+```
+
+ALARM STORE ACTIONS:
+- addAlarm(alarm: Partial<Alarm>): Add new alarm with defaults
+- updateAlarm(id: string, updates: Partial<Alarm>): Modify existing alarm
+- deleteAlarm(id: string): Remove alarm
+- toggleAlarm(id: string): Enable/disable alarm
+- getNextAlarm(): Get the next scheduled alarm
+- triggerAlarm(id: string): Mark alarm as triggered
+- duplicateAlarm(id: string): Create a copy of an alarm
+
+SCREENS REQUIRED:
+
+1. Alarm List (part of Reminders tab or dedicated section):
+   - Display all alarms sorted by time
+   - Toggle switch for each alarm
+   - Show next alarm countdown
+   - Swipe to delete
+   - FAB to add new alarm
+
+2. Edit Alarm Screen (/alarm/[id].tsx):
+   - Time picker (wheel or clock interface)
+   - Label input field
+   - Repeat days selection (pill buttons for each day)
+   - Sound selection (list of presets + custom option)
+   - Vibration toggle
+   - Volume slider with preview button
+   - Snooze settings (enable, duration, max count)
+   - Gradual volume toggle
+   - Dismiss task type selection (grid of options)
+   - Dismiss task configuration (dynamic based on type)
+   - Delete button (for existing alarms)
+   - Save button
+
+3. Alarm Ringing Screen (/alarm/ringing.tsx):
+   - Full-screen takeover
+   - Current time display (large)
+   - Alarm label display
+   - Animated visual (pulsing circles, sun rising, etc.)
+   - Snooze button (if enabled, shows remaining snoozes)
+   - Dismiss button (shows required task)
+   - Task completion interface (changes based on task type)
+
+DISMISS TASK IMPLEMENTATIONS:
+
+Math Task:
+- Generate random arithmetic problems based on difficulty
+- Easy: single-digit addition/subtraction (e.g., 7 + 5)
+- Medium: double-digit operations (e.g., 34 + 27)
+- Hard: three-digit or multiplication (e.g., 156 + 89)
+- Extreme: large multiplication or division (e.g., 47 × 23)
+- Show number keypad for input
+- Haptic feedback for correct/incorrect
+- Progress indicator showing problems remaining
+
+Shake Task:
+- Use Accelerometer to detect device shaking
+- Calculate shake intensity from acceleration delta
+- Display progress circle filling up
+- Different thresholds for light/medium/vigorous
+- Audio/haptic feedback during shaking
+
+Walk Task:
+- Use step counter (pedometer) if available
+- Display step count progress
+- Animated walking character
+- Must complete all steps to dismiss
+
+Breathing Task:
+- Animated circle that expands (inhale) and contracts (exhale)
+- Hold indicator between phases
+- Calming colors and gradients
+- Count of completed cycles
+- Gentle haptic pulse on phase transitions
+
+Typing Task:
+- Display phrase to type
+- Text input field
+- Real-time validation (green for correct, red for errors)
+- Must type entire phrase correctly to dismiss
+
+SOUND PRESETS:
+1. Default Digital - classic beeping
+2. Birds Chirping - nature sounds
+3. Ocean Waves - calming water
+4. Gentle Piano - soft melodies
+5. Energetic Beat - upbeat music
+6. Classic Ring - traditional alarm
+7. Meditation Bell - zen sounds
+8. Rooster Crow - farm style
+9. Thunder & Rain - storm sounds
+10. Custom - user can select from device
+
+NOTIFICATION INTEGRATION:
+- Schedule local notifications for each enabled alarm
+- Notifications must wake device and play sound
+- Full-screen intent for alarm ringing on Android
+- Background audio for iOS
+- Reschedule repeating alarms after trigger
+
+POINTS INTEGRATION:
+- +50 points for waking up without snooze
+- +25 points for waking up with 1-2 snoozes
+- -10 points per snooze used
+- Track statistics: alarms triggered, snooze rate
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/03-alarm-module.md" with complete alarm system specifications. Include the data model, all dismiss task types with their logic, and the points integration. This is a complex module that should be implemented in phases:
+Phase 1: Basic alarm CRUD and list display
+Phase 2: Time scheduling and notifications
+Phase 3: Ringing screen with basic dismiss
+Phase 4: Math and typing dismiss tasks
+Phase 5: Shake and breathing dismiss tasks
+Phase 6: Points integration and statistics
+
+================================================================================
+                      SECTION 5: REMINDERS MODULE SPECIFICATION
+================================================================================
+
+The Reminders module delivers motivational content, affirmations, and custom messages to keep users inspired throughout the day.
+
+REMINDER DATA MODEL:
+```typescript
+interface Reminder {
+  id: string;                    // Unique identifier
+  category: ReminderCategory;    // Type of reminder
+  title: string;                 // Short title
+  message: string;               // Full message content
+  imageUri?: string;             // Optional attached image
+  schedule: ReminderSchedule;    // When to show
+  enabled: boolean;              // Is reminder active?
+  soundEnabled: boolean;         // Play sound on notification
+  vibrationEnabled: boolean;     // Vibrate on notification
+  createdAt: string;             // ISO timestamp
+  lastTriggered?: string;        // ISO timestamp
+}
+
+type ReminderCategory = 
+  | 'motivation'     // Motivational quotes
+  | 'affirmation'    // Positive affirmations
+  | 'study'          // Study reminders
+  | 'health'         // Health tips
+  | 'custom';        // User-defined
+
+interface ReminderSchedule {
+  type: 'once' | 'daily' | 'weekly' | 'interval';
+  time?: string;                 // "HH:MM" for specific time
+  days?: number[];               // 0-6 for weekly
+  intervalMinutes?: number;      // For interval type
+  startTime?: string;            // Window start for interval
+  endTime?: string;              // Window end for interval
+}
+```
+
+CATEGORY DETAILS:
+
+Motivation Category:
+- Icon: 💭 or flame icon
+- Color: Pink gradient
+- Pre-loaded quotes from motivational speakers
+- Random selection from quote database
+- Option to add custom quotes
+
+Affirmation Category:
+- Icon: ✨ or heart icon
+- Color: Purple gradient
+- Positive self-affirmations
+- "I am capable", "I am focused", etc.
+- Personalization option (include user's name)
+
+Study Category:
+- Icon: 📚 or book icon
+- Color: Blue gradient
+- Study session reminders
+- Break time alerts
+- Exam countdown notifications
+
+Health Category:
+- Icon: 🏃 or fitness icon
+- Color: Green gradient
+- Water drinking reminders
+- Stretch break alerts
+- Posture check notifications
+
+Custom Category:
+- Icon: 📝 or edit icon
+- Color: Cyan gradient
+- Fully user-defined content
+- Support for images
+- Any schedule type
+
+SCREENS REQUIRED:
+
+1. Reminders List (/tabs/reminders.tsx):
+   - Categorized sections or filter tabs
+   - Each reminder card shows:
+     - Category icon with color
+     - Title and truncated message
+     - Schedule description
+     - Toggle switch
+   - Swipe to delete
+   - Pull to refresh
+   - FAB to add new reminder
+
+2. Create/Edit Reminder (/reminder/create.tsx):
+   - Category picker (horizontal scrolling icons)
+   - Title input (required, max 50 chars)
+   - Message textarea (required, max 500 chars)
+   - Image picker (optional)
+   - Schedule type selector
+   - Time/interval configuration
+   - Sound toggle
+   - Vibration toggle
+   - Preview notification button
+   - Save/Update button
+
+3. Reminder Triggered View:
+   - Modal or notification expansion
+   - Full message display
+   - Image display (if attached)
+   - Dismiss button
+   - Mark as favorite option
+
+PRE-LOADED CONTENT:
+Include at least 50 motivational quotes and 30 affirmations covering topics like:
+- Productivity and focus
+- Self-improvement
+- Overcoming procrastination
+- Building habits
+- Academic success
+- Health and wellness
+- Mindfulness
+
+NOTIFICATION HANDLING:
+- Category-specific notification channels (Android)
+- Rich notifications with images (when attached)
+- Action buttons: Dismiss, Snooze, View
+- Proper scheduling for intervals with time windows
+
+POINTS INTEGRATION:
+- +5 points for reading/dismissing a reminder
+- Achievement: "Mindful" - view 50 reminders
+- Daily streak bonus for engaging with reminders
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/04-reminders-module.md" with complete reminder system specifications. Include all category definitions, scheduling options, and pre-loaded content requirements. Implementation order:
+Phase 1: Reminder data model and store
+Phase 2: List and CRUD operations
+Phase 3: Scheduling and notifications
+Phase 4: Pre-loaded content database
+Phase 5: Image attachment support
+
+================================================================================
+                      SECTION 6: FOCUS MODE MODULE SPECIFICATION
+================================================================================
+
+Focus Mode is the heart of productivity in FocusGuard. It provides timed focus sessions with ambient sounds, distraction blocking, and progress tracking.
+
+FOCUS SESSION DATA MODEL:
+```typescript
+interface FocusSession {
+  id: string;                    // Unique identifier
+  taskId?: string;               // Link to planner task (optional)
+  mode: FocusModePreset;         // Mode configuration
+  startTime: string;             // ISO timestamp when started
+  endTime?: string;              // ISO timestamp when ended
+  originalDuration: number;      // Planned duration in minutes
+  actualDuration: number;        // Actual focused time in minutes
+  status: 'active' | 'paused' | 'completed' | 'cancelled';
+  pauseEvents: PauseEvent[];     // Track all pauses
+  distractions: DistractionEvent[]; // Track distraction attempts
+  appBlocking: boolean;          // Was app blocking enabled?
+  sound: string | null;          // Ambient sound used
+  notes?: string;                // Optional session notes
+}
+
+interface PauseEvent {
+  pausedAt: string;
+  resumedAt?: string;
+  reason?: string;
+}
+
+interface DistractionEvent {
+  timestamp: string;
+  appPackage?: string;           // Which app was blocked
+  dismissed: boolean;            // Did user resist temptation?
+}
+
+interface FocusModePreset {
+  id: string;
+  name: string;
+  emoji: string;
+  duration: number;              // Minutes
+  breakDuration?: number;        // Break between sessions
+  sessionsCount?: number;        // For Pomodoro-style modes
+  blockApps: boolean;            // Enable app blocking
+  blockNotifications: boolean;   // Silence notifications
+  ambientSound?: string;         // Default sound for this mode
+  color: string;                 // Theme color for this mode
+}
+```
+
+DEFAULT FOCUS MODES:
+1. Quick Focus (⚡): 15 min, no breaks, for quick tasks
+2. Pomodoro (🍅): 25 min work + 5 min break, classic technique
+3. Deep Work (🧠): 50 min, for intensive focus
+4. Study Session (📚): 45 min + 10 min break, optimized for learning
+5. Creative Flow (🎨): 60 min, for creative work
+6. Light Work (☁️): 30 min, casual focus
+7. Custom Mode (⚙️): User-defined settings
+
+AMBIENT SOUNDS:
+1. Rain - gentle rainfall
+2. Forest - birds and nature
+3. Ocean - waves and seagulls
+4. Fireplace - crackling fire
+5. Cafe - coffee shop ambiance
+6. White Noise - static sound
+7. Brown Noise - deeper static
+8. Pink Noise - balanced static
+9. Lo-Fi Music - chill beats
+10. Piano - instrumental classical
+11. Silence - no sound
+
+TIMER FEATURES:
+- Large visual countdown display
+- Circular progress indicator (SVG-based)
+- Color changes as time runs out
+- Pause/Resume functionality
+- End session early option (with penalty)
+- Extend session option (+5, +10, +15 min)
+- Auto-start next session (Pomodoro mode)
+
+FOCUS STORE STATE:
+```typescript
+interface FocusState {
+  currentSession: FocusSession | null;
+  isActive: boolean;
+  isPaused: boolean;
+  remainingSeconds: number;
+  selectedMode: FocusModePreset;
+  selectedSound: string | null;
+  soundVolume: number;
+  customModes: FocusModePreset[];
+  sessionHistory: FocusSession[];
+  
+  // Actions
+  startSession: (mode: FocusModePreset, taskId?: string) => void;
+  pauseSession: () => void;
+  resumeSession: () => void;
+  endSession: (completed: boolean) => void;
+  extendSession: (minutes: number) => void;
+  updateRemainingTime: (seconds: number) => void;
+  addDistractionEvent: (event: DistractionEvent) => void;
+  setSound: (soundId: string | null) => void;
+  setVolume: (volume: number) => void;
+  createCustomMode: (mode: Partial<FocusModePreset>) => void;
+}
+```
+
+SCREENS REQUIRED:
+
+1. Focus Main Screen (/tabs/focus.tsx):
+   When not in session:
+   - Mode selection carousel
+   - Quick stats (today's focus time)
+   - Start button (large, prominent)
+   - Sound selector
+   - Recent sessions summary
+   - Link to blocked apps
+   
+   When in session:
+   - Large circular timer with progress ring
+   - Current mode display
+   - Task name (if linked)
+   - Sound controls
+   - Pause button
+   - End session button
+   - Distraction count
+   - Motivational micro-messages
+
+2. Mode Selection Modal:
+   - Grid of preset modes
+   - Custom mode creation option
+   - Mode details preview
+   - Duration adjustment
+
+3. Session Complete Screen:
+   - Celebration animation
+   - Time focused summary
+   - Points earned display
+   - Distraction resistance score
+   - Notes input option
+   - Share button
+   - "Start Another" button
+
+TIMER IMPLEMENTATION:
+- Use React Native's Animated for smooth animations
+- Background timer continues when app is backgrounded
+- Local notification when session completes
+- Foreground service for Android (persistent notification)
+- Audio continues through earphones even when locked
+
+DISTRACTION BLOCKING:
+- Integrate with App Blocker module
+- Track attempts to open blocked apps
+- Show blocking overlay
+- Award points for resisting distractions
+- Log all distraction events for analytics
+
+POINTS INTEGRATION:
+- +40 points for completing a session
+- +25 bonus for no distractions
+- +15 bonus for no pauses
+- -30 points for ending early (penalty)
+- Streak bonuses for consecutive days
+- Achievement: "Focused" - complete 10 sessions
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/05-focus-module.md" with complete Focus Mode specifications. Include timer logic, sound integration, distraction handling, and session management. Implementation order:
+Phase 1: Timer core functionality
+Phase 2: Mode presets and selection UI
+Phase 3: Session start/pause/complete flow
+Phase 4: Ambient sounds integration
+Phase 5: Points and statistics tracking
+Phase 6: App blocking integration
+Phase 7: Background execution and notifications
+
+================================================================================
+                     SECTION 7: APP BLOCKER MODULE SPECIFICATION
+================================================================================
+
+The App Blocker helps users limit access to distracting applications. Due to platform limitations in React Native/Expo, this feature operates as a tracking and reminder system rather than true system-level blocking.
+
+APP BLOCKER DATA MODEL:
+```typescript
+interface BlockedApp {
+  packageName: string;           // Unique app identifier
+  appName: string;               // Display name
+  appIcon?: string;              // Emoji or local image path
+  dailyLimitMinutes: number;     // Daily usage limit (0 = always blocked)
+  todayUsageMinutes: number;     // Today's tracked usage
+  trackingEnabled: boolean;      // Track usage time
+  reminderEnabled: boolean;      // Show reminders when approaching limit
+  scheduleBlocked: boolean;      // Block during scheduled hours
+  blockSchedule?: BlockSchedule; // When to block
+  unlockTask: UnlockTask;        // Task to unlock temporarily
+  blockMessage: string;          // Custom message when blocked
+  blockImageUri?: string;        // Custom image for block screen
+  streakDays: number;            // Days under limit
+}
+
+interface BlockSchedule {
+  enabled: boolean;
+  startTime: string;             // "HH:MM"
+  endTime: string;               // "HH:MM"
+  days: number[];                // 0-6 for specific days
+}
+
+interface UnlockTask {
+  type: 'none' | 'wait' | 'typing' | 'shake' | 'math';
+  waitSeconds?: number;          // For wait type
+  typingText?: string;           // For typing type
+  shakeIntensity?: 'light' | 'medium' | 'vigorous';
+  shakeDuration?: number;
+  mathDifficulty?: 'easy' | 'medium' | 'hard';
+  mathCount?: number;
+}
+```
+
+BLOCKER STORE ACTIONS:
+- addBlockedApp(app: BlockedApp): Add app to block list
+- removeBlockedApp(packageName: string): Remove from list
+- updateBlockedApp(packageName: string, updates: Partial<BlockedApp>): Modify settings
+- recordUsage(packageName: string, minutes: number): Log usage time
+- isAppBlocked(packageName: string): Check if app is currently blocked
+- resetDailyUsage(): Reset all usage counters (daily)
+- getAppByPackage(packageName: string): Get app details
+
+SCREENS REQUIRED:
+
+1. Add Apps Screen (/blocker/add-app.tsx):
+   - List of installed apps (simulated for Expo)
+   - Category filters (Social, Games, Entertainment, etc.)
+   - Search functionality
+   - Multi-select mode
+   - Add selected button
+   - Sample apps with icons for demo purposes
+
+2. Blocked App Details/Edit:
+   - App info header
+   - Daily limit slider (0-240 minutes)
+   - Schedule blocking toggle
+   - Schedule time pickers
+   - Unlock task selection
+   - Custom block message input
+   - Custom image picker
+   - Usage statistics
+   - Remove from blocked button
+
+3. Blocked Overlay Screen (/blocker/blocked.tsx):
+   - Full-screen darkened overlay
+   - Shield icon with animation
+   - App name and icon
+   - Custom message display
+   - Custom image display
+   - Usage info (today: X min / Y min limit)
+   - "Go Back" button (prominent)
+   - "Unlock" button (if task enabled)
+   - Unlock task interface (when unlocking)
+
+SAMPLE APPS FOR DEMO:
+Since we cannot access real installed apps in Expo, provide a mock list:
+- Instagram (Social, 📸)
+- TikTok (Entertainment, 🎵)
+- YouTube (Video, ▶️)
+- Twitter/X (Social, 🐦)
+- Facebook (Social, 👥)
+- WhatsApp (Messaging, 💬)
+- Snapchat (Social, 👻)
+- Reddit (Social, 🔴)
+- Netflix (Streaming, 🎬)
+- Chrome (Browser, 🌐)
+- Games Category Apps...
+
+UNLOCK TASKS (similar to alarm dismiss tasks):
+
+Wait Task:
+- Show countdown timer
+- User must wait X seconds
+- Progress circle indicator
+- Cannot skip
+
+Typing Task:
+- Phrase to type (e.g., "I will be productive")
+- Custom keyboard
+- Must match exactly
+
+Math Task:
+- Arithmetic problems
+- Must solve correctly
+
+Shake Task:
+- Shake phone vigorously
+- Progress based on accelerometer
+
+USAGE TRACKING APPROACH:
+Since true background app tracking requires native code, implement:
+1. Manual logging option (user reports usage)
+2. Reminder-based system (check-in prompts)
+3. Focus mode integration (track time not in focus)
+4. Future: Native module for actual tracking
+
+POINTS INTEGRATION:
+- +20 points for staying under daily limit
+- -15 points for exceeding limits
+- Streak bonus for consecutive days under limit
+- Achievement: "Self-Control" - 7 day streak
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/06-app-blocker-module.md" with complete blocker specifications. Note the Expo limitations and workarounds. Implementation order:
+Phase 1: Blocked apps list and CRUD
+Phase 2: Add apps screen with mock data
+Phase 3: Blocked overlay screen
+Phase 4: Unlock tasks (wait, typing)
+Phase 5: Unlock tasks (math, shake)
+Phase 6: Schedule blocking logic
+Phase 7: Points integration
+
+================================================================================
+                    SECTION 8: DAY PLANNER MODULE SPECIFICATION
+================================================================================
+
+The Day Planner allows users to schedule tasks and focus sessions for each day, creating a structured routine.
+
+PLANNER DATA MODEL:
+```typescript
+interface DayPlan {
+  date: string;                  // "YYYY-MM-DD"
+  tasks: PlannedTask[];
+  notes?: string;
+  goals?: string[];
+  createdAt: string;
+  lastModified: string;
+}
+
+interface PlannedTask {
+  id: string;
+  planDate: string;              // Parent date reference
+  name: string;                  // Task name
+  emoji: string;                 // Visual identifier
+  description?: string;          // Optional details
+  category: TaskCategory;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  startTime: string;             // "HH:MM"
+  endTime: string;               // "HH:MM"
+  sessions: TaskSession[];       // Focus sessions for this task
+  status: TaskStatus;
+  linkedReminder?: string;       // Reminder ID for notifications
+  metrics: TaskMetrics;
+}
+
+interface TaskSession {
+  id: string;
+  duration: number;              // Planned minutes
+  focusSessionId?: string;       // Link to actual focus session
+  status: 'pending' | 'completed' | 'skipped';
+  completedAt?: string;
+}
+
+interface TaskMetrics {
+  startedAt?: string;
+  completedAt?: string;
+  totalFocusTime: number;        // Actual minutes focused
+  sessionsCompleted: number;
+  sessionsPlanned: number;
+  completionPercentage: number;
+}
+
+type TaskCategory = 
+  | 'study'
+  | 'work'
+  | 'exercise'
+  | 'creative'
+  | 'personal'
+  | 'health'
+  | 'other';
+
+type TaskStatus = 
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'partial'
+  | 'skipped';
+```
+
+PLANNER STORE ACTIONS:
+- createPlan(date: string): Create empty plan for date
+- addTask(date: string, task: Partial<PlannedTask>): Add task to plan
+- updateTask(taskId: string, updates: Partial<PlannedTask>): Modify task
+- deleteTask(taskId: string): Remove task
+- reorderTasks(date: string, taskIds: string[]): Change order
+- duplicatePlan(fromDate: string, toDate: string): Copy plan
+- startTask(taskId: string): Begin working on task
+- completeSession(taskId: string, sessionId: string): Mark session done
+- getPlanForDate(date: string): Get plan for specific date
+- getWeekPlans(startDate: string): Get week of plans
+
+SCREENS REQUIRED:
+
+1. Planner Main Screen (/tabs/planner.tsx):
+   - Date header with navigation (prev/today/next)
+   - Calendar strip (horizontal scrolling week view)
+   - Task list for selected day
+   - Each task card shows:
+     - Time range
+     - Emoji and name
+     - Session progress (e.g., 2/4 sessions)
+     - Duration info
+     - Status indicator
+     - Quick action buttons
+   - Empty state with illustration
+   - FAB to add task
+   - Daily progress summary at top
+
+2. Create/Edit Task Screen (/planner/create.tsx):
+   - Emoji picker
+   - Name input
+   - Description textarea (optional)
+   - Category selector (icons)
+   - Priority selector (colors)
+   - Time range picker (improved wheel picker)
+   - Number of sessions slider
+   - Session duration selector
+   - Add reminder toggle
+   - Color/theme preview
+   - Save button
+
+3. Daily Summary Screen (/planner/summary.tsx):
+   - Points earned today
+   - Goal progress (% of daily goal)
+   - Streak display
+   - Tasks overview (completed vs planned)
+   - Focus time total
+   - Points breakdown (earned vs deducted)
+   - Session completion rate
+   - Alarm performance (if applicable)
+   - Share results button (integrated sharing)
+
+TASK CARD INTERACTIONS:
+- Tap card: Navigate to task details/edit
+- Long press: Show quick actions menu
+- Swipe right: Quick complete
+- Swipe left: Quick skip
+- Start button: Begin focus session for task
+
+TIME STATUS INDICATORS:
+- ✅ Done - task is completed
+- 🔥 Active - currently in progress
+- 🎯 Start Now! - start time has arrived
+- ⏰ In Xm - upcoming task with countdown
+- Gray text - past not completed
+
+POINTS INTEGRATION:
+- +15 points for starting a task
+- +100 points for completing all sessions
+- +50 points for partial completion (50%+)
+- -25 points for skipping a task
+- Bonus for completing all daily tasks
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/07-planner-module.md" with complete planner specifications. Include the task model, session tracking, and calendar functionality. Implementation order:
+Phase 1: Plan and task data models
+Phase 2: Calendar navigation and date selection
+Phase 3: Task list display
+Phase 4: Create/edit task screen
+Phase 5: Focus mode integration
+Phase 6: Daily summary with statistics
+Phase 7: Share functionality
+
+================================================================================
+                     SECTION 9: STATISTICS MODULE SPECIFICATION
+================================================================================
+
+The Statistics module provides users with insights into their productivity patterns through charts, metrics, and trend analysis.
+
+STATISTICS DATA SOURCES:
+- Points store (daily points, streaks, achievements)
+- Focus store (session history)
+- Planner store (task completion rates)
+- Alarm store (wake-up performance)
+- Blocker store (app usage patterns)
+
+KEY METRICS TO TRACK:
+
+Time-Based Metrics:
+- Total focus time (daily/weekly/monthly)
+- Average session duration
+- Longest session record
+- Focus time by time of day
+- Focus time by day of week
+
+Session Metrics:
+- Sessions started
+- Sessions completed
+- Completion rate percentage
+- Distraction-free sessions
+- Early stops count
+
+Points Metrics:
+- Net points (earned - deducted)
+- Points earned breakdown
+- Points deducted breakdown
+- Points trend over time
+- Achievement progress
+
+Task Metrics:
+- Tasks planned vs completed
+- Task completion rate
+- Time accuracy (planned vs actual)
+- Category breakdown
+
+Alarm Metrics:
+- Alarms triggered
+- On-time wake-ups
+- Snooze rate
+- Average snoozes per alarm
+
+Streaks:
+- Current streak (consecutive productive days)
+- Longest streak record
+- Streak calendar visualization
+
+PERIOD SELECTORS:
+- Day: Last 24 hours
+- Week: Last 7 days
+- Month: Last 30 days
+- All Time: Since account creation
+
+STATISTICS STORE STATE:
+Use data from pointsStore which already tracks:
+```typescript
+interface DailyPoints {
+  date: string;
+  earned: {
+    alarms: number;
+    tasksStarted: number;
+    sessionsCompleted: number;
+    completionBonus: number;
+    noDistractionBonus: number;
+  };
+  deducted: {
+    snoozes: number;
+    missedTasks: number;
+    skippedSessions: number;
+    bannedAppUsage: number;
+  };
+  netPoints: number;
+  sessionsStarted: number;
+  sessionsCompleted: number;
+  focusMinutes: number;
+  tasksPlanned: number;
+  tasksCompleted: number;
+  alarmsTriggered: number;
+  alarmsSnoozed: number;
+  alarmsOnTime: number;
+}
+```
+
+SCREENS REQUIRED:
+
+1. Statistics Dashboard (/tabs/stats.tsx):
+   - Period selector tabs (Day/Week/Month)
+   - Hero stats card:
+     - Total focus time (large number)
+     - Trend indicator (up/down %)
+   - Stats grid (2x2):
+     - Net Points
+     - Sessions (completed/started)
+     - Completion Rate (%)
+     - Streaks
+   - Reminders/Alarms count card
+   - Charts section:
+     - Focus time bar chart (by day)
+     - Points trend line chart
+   - Insights section:
+     - Best productivity time
+     - Most productive day
+     - Recommendations
+   - Achievements section:
+     - Recent achievements
+     - Progress bars for locked achievements
+
+CHART IMPLEMENTATIONS:
+Use custom SVG charts or a library like:
+- react-native-chart-kit
+- victory-native
+- react-native-svg-charts
+
+Charts needed:
+1. Bar chart: Daily focus minutes
+2. Line chart: Points trend
+3. Progress ring: Completion rate
+4. Heat map: Activity calendar (optional)
+
+ACHIEVEMENTS SYSTEM:
+```typescript
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: 'focus' | 'streak' | 'points' | 'special';
+  requirement: number;
+  progress: number;
+  unlocked: boolean;
+  unlockedAt?: string;
+}
+```
+
+Sample Achievements:
+- "Early Bird" - Wake up without snoozing 7 days
+- "Focused Mind" - Complete 10 focus sessions
+- "Marathon" - Focus for 4+ hours in one day
+- "Streak Master" - Maintain 30-day streak
+- "Distraction Free" - Complete 5 sessions without distractions
+- "Planner Pro" - Complete all daily tasks 5 days in a row
+- "Point Collector" - Earn 10,000 total points
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/08-statistics-module.md" with complete statistics specifications. Include all metrics, chart types, and achievements. Implementation order:
+Phase 1: Aggregate data from stores
+Phase 2: Period selection and calculations
+Phase 3: Stats card grid
+Phase 4: Basic charts (bars, lines)
+Phase 5: Achievement system
+Phase 6: Insights generation
+
+================================================================================
+                  SECTION 10: GAMIFICATION AND POINTS SYSTEM
+================================================================================
+
+The points system gamifies productivity, making habit-building addictive and rewarding through visible progress and achievements.
+
+POINTS ACTIONS:
+
+Earning Points:
+| Action                          | Points | Notes                         |
+|---------------------------------|--------|-------------------------------|
+| Wake up (no snooze)             | +50    | Alarm dismissed immediately   |
+| Wake up (1-2 snoozes)           | +25    | Reduced reward                |
+| Start a task                    | +15    | Begin working on planned task |
+| Complete focus session          | +40    | Finish scheduled session      |
+| Complete task (all sessions)    | +100   | Finish entire task            |
+| Partial task completion (50%+)  | +50    | Complete at least half        |
+| No distractions bonus           | +25    | Session without app opens     |
+| Daily goal reached              | +75    | Earn target points for day    |
+| Streak day bonus                | +10×n  | n = current streak day        |
+| Read reminder                   | +5     | Engage with reminder          |
+| Stay under app limit            | +20    | Daily limit not exceeded      |
+
+Deducting Points:
+| Action                          | Points | Notes                         |
+|---------------------------------|--------|-------------------------------|
+| Snooze alarm                    | -10    | Per snooze                    |
+| End session early               | -30    | Cancel before completion      |
+| Skip planned task               | -25    | Mark task as skipped          |
+| Exceed app limit                | -15    | Go over daily usage limit     |
+| Miss reminder                   | -5     | Ignore scheduled reminder     |
+
+DAILY GOAL SYSTEM:
+- Default daily goal: 200 points
+- Adjustable in settings (100-500)
+- Progress bar on home/stats
+- Push notification at 90% progress
+- Celebration animation at goal
+
+STREAK SYSTEM:
+- A "productive day" requires earning daily goal
+- Streak increments each consecutive productive day
+- Streak resets if goal not met
+- Streak protection: One free skip per week
+- Streak milestones celebrate at 7, 30, 100 days
+
+LEVEL SYSTEM (Optional Feature):
+- Level based on total points
+- Each level requires more points
+- Level 1: 0 points
+- Level 2: 500 points
+- Level 3: 1,500 points
+- Level n: exponential growth
+- Level badges and titles
+
+POINTS STORE IMPLEMENTATION:
+```typescript
+interface PointsState {
+  totalPoints: number;
+  todayPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  dailyGoal: number;
+  level: number;
+  dailyHistory: DailyPoints[];
+  achievements: Achievement[];
+  
+  // Actions
+  addPoints: (date: string, category: string, amount: number) => void;
+  deductPoints: (date: string, category: string, amount: number) => void;
+  checkStreak: () => void;
+  incrementStreak: () => void;
+  resetStreak: () => void;
+  checkAchievements: () => void;
+  unlockAchievement: (id: string) => void;
+  getPointsForDate: (date: string) => DailyPoints;
+  getPointsForPeriod: (start: string, end: string) => DailyPoints[];
+  setDailyGoal: (goal: number) => void;
+  recordFocusSession: (...) => void;
+  recordAlarmTriggered: (date: string, snoozed: boolean) => void;
+  recordTaskStarted: (date: string) => void;
+  recordTaskCompleted: (date: string, percentage: number) => void;
+  recordSessionStarted: (date: string) => void;
+  recordSessionCompleted: (date: string, noDistraction: boolean) => void;
+}
+```
+
+UI INTEGRATION:
+- Points display in header/nav bar
+- Animated point increments (floating numbers)
+- Sound effects for earning points
+- Celebration animations for milestones
+- Streak fire icon with count
+- Level badge display
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/09-points-system.md" with complete gamification specifications. Include all point values, streak logic, and achievement triggers. This module should be implemented early as other modules depend on it.
+
+================================================================================
+                    SECTION 11: ONBOARDING AND SETTINGS
+================================================================================
+
+ONBOARDING FLOW:
+First-time users see a 5-slide introduction:
+
+Slide 1 - Smart Alarms:
+- Icon: ⏰
+- "Wake up with purpose"
+- Features: dismiss tasks, custom sounds, snooze limits
+
+Slide 2 - Reminders:
+- Icon: 💭
+- "Stay motivated all day"
+- Features: quotes, affirmations, custom images
+
+Slide 3 - Focus Mode:
+- Icon: 🎯
+- "Deep work made easy"
+- Features: presets, sounds, session tracking
+
+Slide 4 - App Blocker:
+- Icon: 🛡️
+- "Take control of your time"
+- Features: limits, unlock challenges, usage tracking
+
+Slide 5 - Track Progress:
+- Icon: 📊
+- "See your growth"
+- Features: analytics, achievements, streaks
+
+Final action: "Get Started" button → navigates to main app
+
+SETTINGS SECTIONS:
+
+General:
+- Display name (for personalization)
+- Daily points goal slider
+- Theme (dark/light/system)
+- Notification settings (master toggle)
+
+Alarms:
+- Default snooze duration
+- Default max snoozes
+- Default dismiss task
+- Volume override
+
+Focus:
+- Default focus mode
+- Auto-start next session
+- Strict mode (no pause)
+- Blocking during focus
+
+Reminders:
+- Default reminder time
+- Random quote interval
+- Quiet hours
+
+App Blocker:
+- Global blocking toggle
+- Unlock task default
+- Daily reset time
+
+Data:
+- Export data (JSON)
+- Clear all data
+- Backup to cloud (future)
+
+About:
+- App version
+- Privacy policy
+- Terms of service
+- Contact support
+- Rate app
+
+AI INSTRUCTION - SAVE THIS SECTION:
+Create a file called "specs/10-onboarding-settings.md" with onboarding flow and settings specifications.
+
+================================================================================
+                     SECTION 12: IMPLEMENTATION WORKFLOW
+================================================================================
+
+When building this application, follow this structured approach:
+
+PHASE 1: PROJECT SETUP (Days 1-2)
+1. Initialize Expo project with TypeScript
+2. Set up file structure as specified
+3. Install all dependencies
+4. Create constants/Theme.ts with design tokens
+5. Set up Expo Router navigation structure
+6. Create placeholder screens for all routes
+
+PHASE 2: STATE MANAGEMENT (Days 3-4)
+1. Create pointsStore (foundation for gamification)
+2. Create alarmStore
+3. Create reminderStore
+4. Create focusStore
+5. Create plannerStore
+6. Create blockerStore
+7. Set up persist middleware for all stores
+
+PHASE 3: CORE UI COMPONENTS (Days 5-6)
+1. Build reusable Button component
+2. Build Card component with animations
+3. Build Toggle/Switch component
+4. Build Time Picker component
+5. Build Number Input component
+6. Build Tab Bar with custom styling
+7. Build FAB (Floating Action Button)
+
+PHASE 4: FEATURE IMPLEMENTATION (Days 7-20)
+Implement features in this order:
+1. Onboarding screens
+2. Focus Mode (core timer functionality)
+3. Statistics dashboard
+4. Day Planner
+5. Reminders
+6. Alarms
+7. App Blocker
+
+PHASE 5: INTEGRATION (Days 21-24)
+1. Link Focus Mode with Planner
+2. Integrate points across all features
+3. Set up notifications for all features
+4. Add haptic feedback throughout
+5. Implement sound effects
+
+PHASE 6: POLISH (Days 25-28)
+1. Add enter/exit animations
+2. Optimize performance
+3. Test on iOS and Android
+4. Fix bugs and edge cases
+5. Add loading states and error handling
+
+PHASE 7: LAUNCH PREPARATION (Days 29-30)
+1. Create app icons and splash screen
+2. Write app store descriptions
+3. Capture screenshots
+4. Build production bundles
+5. Submit to app stores
+
+================================================================================
+                              END OF SPECIFICATION
+================================================================================
+
+FINAL AI INSTRUCTIONS:
+
+1. CREATE SPECIFICATION FILES:
+   Before implementing any code, create the following files:
+   - specs/00-app-overview.md
+   - specs/01-technology-stack.md
+   - specs/02-design-system.md
+   - specs/03-alarm-module.md
+   - specs/04-reminders-module.md
+   - specs/05-focus-module.md
+   - specs/06-app-blocker-module.md
+   - specs/07-planner-module.md
+   - specs/08-statistics-module.md
+   - specs/09-points-system.md
+   - specs/10-onboarding-settings.md
+
+2. IMPLEMENTATION ORDER:
+   - Start with foundation (Theme, navigation, stores)
+   - Implement points system early (other features depend on it)
+   - Build Focus Mode first (core feature)
+   - Add features incrementally, testing each
+
+3. QUALITY STANDARDS:
+   - Every screen must follow the design system
+   - All animations should be smooth (60fps)
+   - Haptic feedback on all interactions
+   - TypeScript strict mode compliance
+   - Proper error handling throughout
+
+4. TESTING APPROACH:
+   - Test on both iOS and Android
+   - Verify dark mode appearance
+   - Test all interactive elements
+   - Verify data persistence
+   - Test notification scheduling
+
+This document contains approximately 5000 words and provides complete specifications for the FocusGuard application. Use it as your single source of truth for the entire project.
+
+================================================================================

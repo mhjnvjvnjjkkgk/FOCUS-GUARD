@@ -1,0 +1,174 @@
+# FocusGuard - Planner Tab UI Description
+
+## Overview
+
+The Planner tab serves as the central hub for organizing daily activities within the FocusGuard application. This sophisticated day planning interface allows users to schedule tasks with integrated focus sessions, creating a structured approach to productivity. The tab is distinguished by a purple accent color (#8B5CF6) and features a calendar icon in the bottom navigation bar. The entire design emphasizes time-based organization with a visual timeline that makes daily schedules easy to understand at a glance.
+
+## Header Section
+
+The header displays "📋 Day Planner" with a clipboard emoji, clearly communicating the organizational purpose of this feature. Unlike other tabs, the Planner features a unique date navigation system that allows users to view plans for different days.
+
+### Date Navigation
+
+Centered within the header is an interactive date selector consisting of:
+
+- **Left Arrow**: A chevron-back icon that navigates to the previous day when pressed
+- **Date Display**: The current viewing date displayed in large, bold 20-pixel text. Smart formatting shows "Today" for the current date, "Tomorrow" for the next day, and full date format (e.g., "Monday, Feb 3") for other dates
+- **Right Arrow**: A chevron-forward icon that navigates to the next day when pressed
+- **Quick Return**: Tapping the date text itself returns to today's view
+
+Each navigation action triggers light haptic feedback, making the interface feel responsive and tactile.
+
+## Points Badge
+
+When viewing today's schedule, a prominent points badge appears below the header. This component provides users with immediate feedback on their gamification progress.
+
+### Points Display
+
+The left side of the badge shows:
+
+- **Label**: "Today's Points" in small secondary text
+- **Value**: The current point total displayed in large 28-pixel bold text with the stats feature color
+- **Goal**: The daily goal displayed after a slash (e.g., "/ 200") in a smaller, muted tertiary text
+
+### Streak Badge
+
+If the user has an active streak, the right side of the badge displays:
+
+- **Fire Emoji**: A flame icon (🔥) indicating an active streak
+- **Streak Count**: Text showing "{n} day streak" in orange
+- **Background**: An orange-tinted rounded pill shape
+
+### Progress Bar
+
+At the bottom of the points badge, a horizontal progress bar visualizes daily goal progress:
+
+- **Track**: A 6-pixel high gray bar spanning the full width
+- **Fill**: A colored bar that fills proportionally based on points earned vs daily goal
+- **Smooth Corners**: Fully rounded ends for a modern appearance
+
+## Tasks Timeline
+
+The main content area presents scheduled tasks in a vertical timeline format, creating a clear visual representation of the day's schedule.
+
+### Task Card Layout
+
+Each task is displayed in a two-column layout:
+
+**Time Column (Left)**:
+- Start time in bold 14-pixel text at the top
+- A vertical timeline line connecting start and end times (2-pixel width, gray color)
+- End time in smaller 12-pixel muted text at the bottom
+
+**Task Card (Right)**:
+The main task information is contained in a premium card with:
+- Rounded corners (xl border radius)
+- Left border colored with the task's assigned color (4-pixel width)
+- White background in light mode, dark gray (#1a1a2e) in dark mode
+- Subtle shadows for depth
+
+### Task Card Content
+
+**Header Row**:
+- **Task Emoji**: A decorative emoji representing the task type (20 pixels)
+- **Task Name**: The task title in bold 16-pixel text, truncated to one line if necessary
+- **Status Badge**: A small rounded badge indicating the task's current status:
+  - "🎯 Start Now!" (amber) - When within the scheduled time window
+  - "🔥 Active" (orange) - When focus session is in progress
+  - "✅ Done" (green) - When completed
+  - "⏭️ Skipped" (red) - When skipped
+  - "⏰ In {n}m" (cyan) - When starting within the hour
+  - "📅 In {n}h" (gray) - When starting later today
+
+**Footer Row**:
+- **Duration Badge**: Clock icon with total task duration in minutes
+- **Sessions Counter**: Timer icon showing completed/total focus sessions (e.g., "2/4 sessions")
+- **Blocking Indicator**: Shield icon appears if app blocking is enabled for this task
+- **Points Display**: Potential or earned points shown on the right (e.g., "+180 pts")
+
+### Active Task Highlighting
+
+The current or upcoming task receives special treatment:
+- Pulsing animation that subtly scales the card between 1.0 and 1.02
+- Enhanced border (2-pixel width, orange color)
+- Thicker left accent border (6-pixel width)
+
+### Progress Indicator
+
+For in-progress and completed tasks, a thin progress bar appears at the bottom edge of the card:
+- 4-pixel height
+- Fills proportionally based on completion percentage
+- Color matches the task status (green for complete, orange for in-progress)
+
+### Animation and Interaction
+
+- **Entry Animation**: Cards enter with staggered fade-in-down animations (50ms delay between cards)
+- **Press Animation**: Spring scale animation when pressed
+- **Navigation**: Tapping a pending or in-progress task navigates to the active session screen
+
+## Day Summary Card
+
+When tasks exist for the selected day, a summary card appears at the bottom of the timeline, providing aggregate statistics.
+
+### Summary Content
+
+- **Title**: "Day Summary" in 14-pixel bold text
+- **Three-Column Layout**:
+  1. **Planned**: Total number of tasks for the day (orange color)
+  2. **Done**: Number of completed tasks (green color)
+  3. **Focus**: Total focus time accumulated in minutes (amber color)
+
+Each metric is displayed with a large 24-pixel value above small 11-pixel label text.
+
+## Empty State
+
+When no tasks are scheduled for the selected day, an encouraging empty state is displayed:
+
+- **Large Emoji**: A 64-pixel clipboard emoji (📋) centered on screen
+- **Title**: "No Tasks Planned" in bold 20-pixel text
+- **Description**: "Plan your day by adding tasks with focus sessions" in secondary text
+- **Action Button**: A prominent purple button with "Add First Task" text, navigating to the task creation screen
+
+The empty state animates in with a fade effect for a polished entrance.
+
+## Floating Action Button
+
+A floating action button (FAB) is positioned in the bottom-right area of the screen, above the tab bar. This 56x56 pixel circular button features:
+
+- **Purple Background**: Matches the planner feature's accent color
+- **Plus Icon**: A white 28-pixel plus icon indicating the add action
+- **Shadow Effects**: Large shadows for depth and visibility
+- **Entry Animation**: Fades in with a 400ms delay after the page loads
+
+Tapping the FAB navigates to the task creation screen with the selected date pre-populated, triggering a medium haptic impact.
+
+## Theme Support
+
+The Planner tab fully adapts to light and dark color schemes:
+
+- **Light Mode**: Clean white card backgrounds, dark primary text, subtle gray timeline lines
+- **Dark Mode**: Deep charcoal backgrounds, light text, adjusted border and shadow colors
+
+All transitions are handled gracefully to ensure a consistent experience.
+
+## Status Color System
+
+The planner uses a consistent color system for task statuses:
+
+- **Completed** (Green): Tasks fully finished
+- **In Progress** (Orange/Focus Color): Active focus sessions
+- **Partial** (Amber): Partially completed tasks
+- **Skipped** (Red): Tasks the user chose to skip
+- **Pending** (Gray): Future scheduled tasks
+
+## Navigation and Integration
+
+The Planner tab integrates deeply with the FocusGuard ecosystem:
+
+- Task cards link to the active session screen for starting or resuming focus sessions
+- Points are visually connected to task completion
+- App blocking configuration is displayed on task cards
+- The tab icon shows a filled calendar when active, outlined when inactive
+- A purple dot appears below the icon when the tab is selected
+
+This comprehensive planning interface enables users to structure their days effectively, combining task management with focus sessions and productivity tracking in a cohesive, visually appealing experience.

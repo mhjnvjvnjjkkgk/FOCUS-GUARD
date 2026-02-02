@@ -1,0 +1,99 @@
+# FocusGuard - Alarms Tab UI Description
+
+## Overview
+
+The Alarms tab serves as the primary interface for managing wake-up alarms within the FocusGuard application. This screen is designed with a modern, premium aesthetic featuring smooth animations, glassmorphism effects, and intuitive user interactions. The tab is accessible via the bottom navigation bar, marked by an alarm clock icon that animates when selected, accompanied by an orange accent color that distinguishes it from other features.
+
+## Header Section
+
+At the top of the screen, users are greeted with a header displaying "⏰ Alarms" in a bold, clean typeface. The header adapts to the device's color scheme, appearing with a light background in day mode and a dark charcoal background in night mode. The header text is properly styled with a weight of 600 and an 18-pixel font size, ensuring excellent readability across all device sizes.
+
+## Statistics Card
+
+Immediately below the header sits a prominent statistics card that provides users with an at-a-glance summary of their alarm status. This card features a premium design with rounded corners (2xl border radius), subtle shadows for depth, and a semi-transparent border that adds to the glassmorphism aesthetic.
+
+The statistics card is divided into three equal sections separated by vertical dividers:
+
+1. **Active Alarms**: Displays the count of currently enabled alarms in a large, bold orange-colored number. Below this number, a subtle gray label reads "Active Alarms" to provide context.
+
+2. **Until Next**: Shows the time remaining until the next scheduled alarm triggers. This value is displayed in green, indicating a positive metric. The format shows hours and minutes (e.g., "2h 30m" or simply "45m" if less than an hour remains). If no alarms are active, this displays "--".
+
+3. **Total**: Shows the total number of alarms created by the user, displayed in purple. This includes both active and disabled alarms, giving users a sense of their complete alarm library.
+
+## Alarms List Section
+
+Below the statistics card, the main content area displays a section titled "Your Alarms" with a helpful hint underneath reading "Tap to edit, long press to delete" in a smaller, secondary text color. This guidance ensures users understand the interaction patterns without requiring external documentation.
+
+Each alarm is rendered as an individual card with the following elements:
+
+### Alarm Card Design
+
+Each alarm card features a sophisticated design with:
+
+- **Premium Card Styling**: White background in light mode, dark purple-tinted background (#1a1a2e) in dark mode
+- **Rounded Corners**: Extra-large border radius for a modern, friendly appearance
+- **Subtle Border**: A faint orange-tinted border that ties back to the alarm feature's accent color
+- **Shadow Effects**: Large shadows that create a floating effect above the background
+
+### Alarm Card Content
+
+**Time Display**: The alarm time is prominently displayed in an extra-large font (48 pixels) with an ultra-bold weight (800). The time is formatted in 12-hour AM/PM format (e.g., "7:30 AM" or "10:00 PM"), with tight letter spacing (-2) for a compact, modern look.
+
+**Next Trigger Indicator**: Directly below the time, an orange-colored text shows when the alarm will next trigger. For enabled alarms, this displays relative time like "In 8h 30m". For disabled alarms, it simply shows "Disabled" in a muted gray color.
+
+**Toggle Switch**: On the right side of each card, a toggle switch allows users to quickly enable or disable the alarm. The switch uses the alarm's orange accent color when active, with a smooth track color transition.
+
+**Label**: If the user has assigned a custom label to the alarm, it appears below the time in a secondary text style.
+
+**Repeat Days Row**: A horizontal row of circular day badges (S, M, T, W, T, F, S) indicates which days the alarm repeats. Active days are highlighted with an orange background tint and bold orange text, while inactive days remain in a muted gray.
+
+**Dismiss Task Badge**: In the bottom-right corner of each card, a small badge indicates the type of task required to dismiss the alarm. This badge features:
+- An emoji icon representing the task type (🧮 for math, 📳 for shake, ⌨️ for typing, 🚶 for walk, 🧘 for breathing, ⚡ for quick dismiss)
+- A text label identifying the task type
+- An orange-tinted background that matches the alarm theme
+
+### Animation and Interaction
+
+- **Entry Animation**: Each alarm card enters the screen with a staggered fade-in-down animation (80ms delay between cards), creating a cascading effect that feels dynamic and engaging
+- **Press Animation**: When users press on a card, it scales down slightly (0.98) with a snappy spring animation, providing tactile feedback
+- **Haptic Feedback**: Light haptic impact when toggling alarms, warning haptic when deleting
+
+## Empty State
+
+When no alarms exist, the screen displays an encouraging empty state design:
+
+- **Large Emoji**: An 80-pixel alarm clock emoji (⏰) centered on screen
+- **Title**: "No Alarms Yet" in a bold 22-pixel font
+- **Description**: "Tap the + button to create your first alarm" in secondary text with generous padding
+- **Action Button**: A prominent orange button with rounded-full corners, containing a plus icon and "Create Alarm" text, encouraging users to add their first alarm
+
+## Floating Action Button
+
+A floating action button (FAB) is permanently positioned in the bottom-right corner of the screen. This 60x60 pixel circular button features:
+
+- **Orange Background**: Matches the alarm feature's accent color
+- **Plus Icon**: A white 28-pixel plus icon indicating the add action
+- **Shadow**: Large shadow for depth and visibility
+- **Press Effect**: Scales to 0.95 when pressed for tactile feedback
+
+Tapping this button navigates users to the alarm creation screen with a medium haptic impact.
+
+## Theme Support
+
+The entire Alarms tab fully supports both light and dark color schemes:
+
+- **Light Mode**: Clean white backgrounds, dark text, subtle gray borders
+- **Dark Mode**: Deep charcoal backgrounds (#1a1a2e), light text, slightly lighter borders
+
+All transitions between theme modes are handled gracefully, ensuring a consistent experience regardless of the user's system preferences.
+
+## Navigation and Integration
+
+The Alarms tab integrates seamlessly with the broader FocusGuard ecosystem:
+
+- Tapping an alarm card navigates to the edit screen for that specific alarm
+- Long-pressing triggers a delete action with a warning haptic
+- The tab icon in the bottom navigation shows a filled alarm when active, outlined when inactive
+- An orange dot appears below the icon when the tab is selected
+
+This comprehensive alarm management interface ensures users can easily create, modify, and organize their wake-up routines, all while earning points through the gamification system for waking up on time without snoozing.

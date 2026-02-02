@@ -1,0 +1,217 @@
+# FocusGuard - Focus Tab UI Description
+
+## Overview
+
+The Focus tab represents the core productivity feature of the FocusGuard application, providing users with an immersive focus timer experience. This sophisticated interface transforms the user's device into a dedicated concentration tool, featuring visual timers, ambient sounds, and a gamification system that rewards sustained focus. The tab is distinguished by an orange accent color and features a timer icon in the bottom navigation bar.
+
+## Immersive Mode
+
+When a focus session begins, the interface enters an immersive mode:
+- The bottom navigation bar automatically hides
+- The header disappears for distraction-free focus
+- Scrolling is disabled to maintain concentration
+- The timer expands and centers on screen
+- A mesmerizing glow effect pulses around the timer
+
+This transformation signals to the user that they are now in a dedicated focus state, psychologically reinforcing their commitment to the session.
+
+## Timer Display
+
+At the heart of the Focus tab is a large, circular timer that dominates the screen.
+
+### Timer Design
+
+The timer uses an SVG-based progress ring design:
+- **Size**: Approximately 75% of screen width (even larger in active mode at 85%)
+- **Progress Ring**: A 12-pixel thick stroke that fills clockwise as time passes
+- **Background Ring**: A subtle semi-transparent white ring (10% opacity)
+- **Color**: Matches the selected preset's accent color
+- **Stroke Style**: Rounded line caps (strokeLinecap="round") for a smooth, modern look
+
+### Timer Content (Center)
+
+Inside the timer ring, centered content displays:
+
+- **Preset Icon**: A large emoji representing the selected focus type (e.g., 🍅 for Pomodoro)—increases to 48 pixels when active
+- **Time Remaining**: Large digital clock-style text showing minutes and seconds (MM:SS format)—expands to 64 pixels in active mode
+- **Focus Status**: Text indicating current state in the preset's color:
+  - "Ready to focus" when idle
+  - "🔥 Focusing" with fire emoji when active
+- **Preset Info**: Small text showing "{Name} • {Duration} min" (e.g., "Pomodoro • 25 min")
+- **Sound Indicator**: When active with ambient sound, shows the sound emoji and name (e.g., "🌧️ Rain")
+
+### Animation Effects
+
+When active, the timer features sophisticated animations:
+- **Pulse Effect**: The entire timer gently scales between 1.0 and 1.02 every 3 seconds
+- **Glow Effect**: A colored glow around the timer that fades in and out (opacity cycles 0.3 to 0.6)
+- The animations use smooth easing functions for a calming, meditative feel
+
+## Control Buttons
+
+### Idle State Controls
+
+When not in a session, three buttons appear horizontally below the timer:
+
+1. **Reset Button** (Left): A circular button with a refresh icon to reset the timer to the preset duration. Gray color, becomes visible only when paused or reset is needed.
+
+2. **Start Button** (Center): A large prominent play button
+   - 80x80 pixels with fully rounded corners
+   - Background color matches the selected preset
+   - White play icon (36 pixels)
+   - Heavy haptic feedback when pressed
+
+3. **Strict Mode Toggle** (Right): A lock icon button
+   - Unlocked icon (gray) when disabled
+   - Locked icon (red) when enabled
+   - Background turns light red when strict mode is active
+   - Strict mode adds additional resistance to stopping sessions
+
+### Active State Controls
+
+When a session is running, only a single stop button appears:
+- Smaller size (80x80 pixels) than the start button
+- Solid red background (#EF4444)
+- White stop icon (32 pixels)
+- Appears centered below the timer
+
+## Focus Presets Section
+
+Below the timer, a grid of preset options allows users to customize their focus sessions.
+
+### Section Header
+"Focus Presets" title in bold text, adapting to light/dark themes.
+
+### Preset Cards
+
+Five preset options are displayed in a flexible grid:
+
+1. **Pomodoro** (🍅)
+   - Duration: 25 minutes
+   - Color: Red (#EF4444)
+   - Classic productivity technique
+
+2. **Deep Work** (🎯)
+   - Duration: 90 minutes
+   - Color: Purple (#8B5CF6)
+   - Extended focus for complex tasks
+
+3. **Study** (📚)
+   - Duration: 50 minutes
+   - Color: Blue (#3B82F6)
+   - Academic-focused timing
+
+4. **Quick** (⚡)
+   - Duration: 15 minutes
+   - Color: Orange (#F97316)
+   - Short burst focus sessions
+
+5. **Test** (🧪)
+   - Duration: 1 minute
+   - Color: Green (#10B981)
+   - For testing the timer functionality
+
+### Preset Card Design
+
+Each card features:
+- Rounded corners with subtle shadows
+- Large emoji icon at top
+- Preset name in bold text
+- Duration displayed at bottom (e.g., "25m")
+- When selected: 2-pixel colored border matching the preset color
+
+## Ambient Sounds Section
+
+A horizontal scrollable row of ambient sound options enhances focus sessions.
+
+### Available Sounds
+
+1. **None** (🔇): No background audio
+2. **Rain** (🌧️): Soothing rain sounds
+3. **Forest** (🌲): Nature and bird sounds
+4. **Ocean** (🌊): Wave and water sounds
+5. **Café** (☕): Coffee shop ambient noise
+6. **Fire** (🔥): Crackling fireplace sounds
+
+### Sound Chip Design
+
+Each sound option is presented as a "chip" style button:
+- Rounded pill shape
+- Icon emoji on the left
+- Sound name text on the right
+- When selected: Background changes to the preset's color with white text
+- Horizontal scrolling allows access to all sounds
+
+### Audio Playback
+
+When a session starts with a sound selected:
+- Audio loads from CDN URLs
+- Loops continuously at 50% volume
+- Unloads when session ends or sound is changed
+
+## Today's Stats Card
+
+A summary card shows the user's focus statistics for the current day.
+
+### Stats Display
+
+Three metrics in a horizontal row:
+
+1. **Sessions**: Number of completed focus sessions today (orange color)
+2. **Focus Time**: Total focus minutes accumulated (cyan color)
+3. **Points**: Net points earned from focus activities (green for positive, red for negative)
+
+Stats are separated by vertical dividers and feature large numbers with small labels below.
+
+## Recent Sessions Section
+
+If sessions have been completed, a history section appears showing recent activity.
+
+### Session Item Design
+
+Each session entry displays:
+- **Preset Icon**: The emoji of the preset used
+- **Session Info**: Preset name and time of completion (e.g., "Pomodoro • 10:30 AM")
+- **Points Badge**: Green for completed (+points), red for abandoned (-points)
+
+Up to 5 recent sessions are displayed in chronological order.
+
+## Early Stop Modal
+
+When attempting to stop a session, a warning modal appears to prevent accidental abandonment.
+
+### Grace Period
+
+If pressed within the first 10 seconds, the session cancels without penalty (misclick protection).
+
+### Confirmation Modal (After Grace Period)
+
+- **Warning Icon**: Large ⚠️ emoji
+- **Title**: "Stop Early?"
+- **Penalty Warning**: Shows the exact point penalty in red
+- **Phrase Input**: User must type "I will reschedule this task" to confirm
+- **Buttons**: "Keep Going" (outlined) and "Stop" (red, only active when phrase matches)
+
+### Point Deduction System
+
+- Penalty scales based on remaining time (5-30 points)
+- More time remaining = higher penalty
+- Alerts show exact focused time and completion percentage
+
+## Theme Support
+
+The Focus tab fully supports both color schemes:
+
+- **Light Mode**: Clean white backgrounds, dark text, subtle shadows
+- **Dark Mode**: Deep charcoal backgrounds, light text, adjusted glow effects
+
+## Points System Integration
+
+The Focus tab deeply integrates with the gamification system:
+
+- **Base Points**: 2 points per minute of focus
+- **Minimum**: 10 points for any completed session
+- **Bonuses**: +10 for 25+ min, +20 for 50+ min, +40 for 90+ min
+- **Penalties**: 5-30 points for stopping early (scaled by remaining time)
+
+This comprehensive focus interface transforms the device into a dedicated productivity tool, combining visual feedback, ambient audio, and gamification to help users maintain sustained concentration and build better focus habits.
