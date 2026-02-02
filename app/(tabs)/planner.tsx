@@ -61,6 +61,14 @@ const formatTime = (hour: number, minute: number) => {
     return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${period}`;
 };
 
+// Calculate end time given start time and duration in minutes
+const calculateEndTime = (startHour: number, startMinute: number, durationMinutes: number) => {
+    const totalMinutes = startHour * 60 + startMinute + durationMinutes;
+    const endHour = Math.floor(totalMinutes / 60) % 24;
+    const endMinute = totalMinutes % 60;
+    return { hour: endHour, minute: endMinute };
+};
+
 // ============================================
 // NEO HEADER
 // ============================================
@@ -443,6 +451,14 @@ export default function PlannerScreen() {
                                 <View style={styles.timeBlock}>
                                     <Text style={styles.timeBlockText}>
                                         {formatTime(task.startTime.hour, task.startTime.minute)}
+                                    </Text>
+                                    <Text style={styles.timeBlockArrow}>→</Text>
+                                    <Text style={styles.timeBlockText}>
+                                        {(() => {
+                                            const totalDuration = task.sessions.reduce((sum, s) => sum + s.duration, 0);
+                                            const endTime = calculateEndTime(task.startTime.hour, task.startTime.minute, totalDuration);
+                                            return formatTime(endTime.hour, endTime.minute);
+                                        })()}
                                     </Text>
                                 </View>
                                 {/* Connector Line */}
