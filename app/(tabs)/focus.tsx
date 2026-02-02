@@ -1076,6 +1076,22 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 0,
     },
+    warningStripe: {
+        width: '110%',
+        backgroundColor: NEO_RED,
+        paddingVertical: 12,
+        marginTop: -24,
+        marginBottom: 20,
+        borderWidth: 4,
+        borderColor: NEO_BLACK,
+    },
+    warningStripeText: {
+        fontSize: 16,
+        fontWeight: '900',
+        color: NEO_WHITE,
+        textAlign: 'center',
+        letterSpacing: 2,
+    },
     modalTitle: {
         fontSize: 32,
         fontWeight: '900',
