@@ -9,6 +9,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { requestNotificationPermissions } from '@/services/AlarmService';
 import FloatingFriendsButton from '@/components/FloatingFriendsButton';
+import ActiveBattleNotch from '@/components/ActiveBattleNotch';
 
 // ============================================
 // NEOBRUTALIST DESIGN CONSTANTS
@@ -256,6 +257,7 @@ export default function TabLayout() {
         </Animated.View>
       </GestureDetector>
       <FloatingFriendsButton />
+      <ActiveBattleNotch />
     </View>
   );
 }
