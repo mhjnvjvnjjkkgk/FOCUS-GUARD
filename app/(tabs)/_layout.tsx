@@ -1,6 +1,6 @@
 import { Tabs, usePathname, router } from 'expo-router';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, Pressable, Platform, Dimensions, ScrollView, TextInput, Switch, Alert } from 'react-native';
+import { StyleSheet, View, Text, Pressable, Platform, Dimensions, ScrollView, TextInput, Switch, Alert, LayoutAnimation, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, Easing } from 'react-native-reanimated';
@@ -240,6 +240,11 @@ export default function TabLayout() {
 
   useEffect(() => {
     requestNotificationPermissions();
+    if (Platform.OS === 'android') {
+      if (UIManager.setLayoutAnimationEnabledExperimental) {
+        UIManager.setLayoutAnimationEnabledExperimental(true);
+      }
+    }
   }, []);
 
   const SB = {
@@ -276,22 +281,24 @@ export default function TabLayout() {
   const currentTabIndex = TAB_ROUTES.indexOf(pathname) >= 0 ? TAB_ROUTES.indexOf(pathname) : 0;
 
   const swipeGesture = Gesture.Pan()
-    .activeOffsetX([-30, 30])
+    .activeOffsetX([-10, 10])
     .failOffsetY([-20, 20])
     .onEnd((event) => {
       if (swipeCooldown.current || sidebarOpen) return;
       const { translationX, velocityX } = event;
-      if (Math.abs(translationX) > 80 && Math.abs(velocityX) > 300) {
+      if (Math.abs(translationX) > 20 && Math.abs(velocityX) > 50) {
         if (translationX < 0 && currentTabIndex < TAB_ROUTES.length - 1) {
           // Swipe left → next tab
           swipeCooldown.current = true;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           router.navigate(TAB_ROUTES[currentTabIndex + 1] as any);
           setTimeout(() => { swipeCooldown.current = false; }, 400);
         } else if (translationX > 0 && currentTabIndex > 0) {
           // Swipe right → previous tab
           swipeCooldown.current = true;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           router.navigate(TAB_ROUTES[currentTabIndex - 1] as any);
           setTimeout(() => { swipeCooldown.current = false; }, 400);
         }
