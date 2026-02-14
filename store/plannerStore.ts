@@ -7,10 +7,36 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, collection, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/configs/firebaseConfig';
 
-const syncPlanToFirestore = (date: string, plan: DailyPlan) => {
+// Helper to remove undefined values for Firestore
+const sanitizeData = (data: any): any => {
+    if (Array.isArray(data)) {
+        return data.map(item => sanitizeData(item));
+    } else if (data !== null && typeof data === 'object') {
+        return Object.keys(data).reduce((acc, key) => {
+            const value = data[key];
+            if (value !== undefined) {
+                acc[key] = sanitizeData(value);
+            } else {
+                acc[key] = null; // Firestore prefers null over undefined or missing
+            }
+            return acc;
+        }, {} as any);
+    }
+    return data;
+};
+
+const syncPlanToFirestore = async (date: string, plan: DailyPlan) => {
     const user = auth.currentUser;
     if (user && db) {
-        setDoc(doc(db, `users/${user.uid}/dailyPlans`, date), plan, { merge: true });
+        try {
+            const sanitizedPlan = sanitizeData(plan);
+            await setDoc(doc(db, `users/${user.uid}/dailyPlans`, date), sanitizedPlan, { merge: true });
+            console.log(`✅ Synced plan for ${date} to Firestore`);
+        } catch (error) {
+            console.error(`❌ Failed to sync plan for ${date}:`, error);
+        }
+    } else {
+        console.warn('⚠️ Cannot sync plan: User not logged in or DB not initialized');
     }
 };
 
