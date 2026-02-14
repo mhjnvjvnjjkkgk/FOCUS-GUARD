@@ -8,6 +8,7 @@ export { useBlockerStore } from './blockerStore';
 export { usePlannerStore } from './plannerStore';
 export { usePointsStore, POINTS_CONFIG } from './pointsStore';
 export { useSettingsStore } from './settingsStore';
+export { useShopStore } from './shopStore';
 
 // Re-export types
 export type { Alarm, DismissTask } from './alarmStore';

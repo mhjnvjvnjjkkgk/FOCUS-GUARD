@@ -15,6 +15,7 @@ import { usePlannerStore } from '@/store/plannerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import AlarmService from '@/services/AlarmService';
 import RankUpModal from '@/components/RankUpModal';
+import { useShopStore } from '@/store/shopStore';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -55,6 +56,7 @@ export default function RootLayout() {
       useAlarmStore.getState().syncWithFirestore();
       usePlannerStore.getState().syncWithFirestore();
       useSettingsStore.getState().syncWithFirestore();
+      useShopStore.getState().syncWithFirestore();
 
       return () => {
         console.log('🛑 Stopping Firestore sync...');
@@ -62,6 +64,7 @@ export default function RootLayout() {
         useAlarmStore.getState().stopSync();
         usePlannerStore.getState().stopSync();
         useSettingsStore.getState().stopSync();
+        useShopStore.getState().stopSync();
       };
     }
   }, [user]);
@@ -119,6 +122,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false, gestureEnabled: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="alarm/ringing" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="shop" options={{ headerShown: false, presentation: 'modal' }} />
         </Stack>
         <StatusBar hidden={true} />
         <RankUpModal />

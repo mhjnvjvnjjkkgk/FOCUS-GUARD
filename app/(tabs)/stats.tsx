@@ -29,6 +29,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePointsStore } from '@/store/pointsStore';
@@ -36,6 +37,7 @@ import { usePlannerStore } from '@/store/plannerStore';
 import { useAlarmStore } from '@/store/alarmStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useShopStore } from '@/store/shopStore';
 import * as Google from 'expo-auth-session/providers/google';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '@/configs/firebaseConfig';
@@ -916,6 +918,21 @@ export default function StatsScreen() {
                             </>
                         );
                     })()}
+                </Animated.View>
+
+                {/* Shop Button */}
+                <Animated.View entering={FadeInUp.delay(80).springify()}>
+                    <Pressable
+                        style={rankStyles.shopBtn}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            router.push('/shop' as any);
+                        }}
+                    >
+                        <Text style={rankStyles.shopBtnText}>
+                            🛒 SHOP  •  🪙 {useShopStore.getState().getSpendableBalance().toLocaleString()}
+                        </Text>
+                    </Pressable>
                 </Animated.View>
 
                 {/* Period Selector */}
@@ -2004,5 +2021,24 @@ const rankStyles = StyleSheet.create({
         textAlign: 'center',
         letterSpacing: 2,
         marginTop: 4,
+    },
+    shopBtn: {
+        backgroundColor: '#FFD700',
+        borderWidth: NEO.border,
+        borderColor: '#000',
+        padding: 12,
+        marginBottom: 16,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: NEO.shadowOffset, height: NEO.shadowOffset },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 0,
+    },
+    shopBtnText: {
+        fontSize: 14,
+        fontWeight: '900' as '900',
+        color: '#000',
+        letterSpacing: 2,
     },
 });
