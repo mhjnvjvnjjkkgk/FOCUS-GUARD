@@ -19,10 +19,13 @@ import { Image } from 'expo-image';
 
 import { useBattleStore } from '@/store/battleStore';
 import { usePointsStore } from '@/store/pointsStore';
+import { useRewardsStore } from '@/store/rewardsStore';
 import { BATTLE_CATEGORIES, BattleCategory } from '@/data/bots';
 import { RANKS } from '@/data/ranks';
 import MatchmakingOverlay from '@/components/MatchmakingOverlay';
 import ActiveBattleView from '@/components/ActiveBattleView';
+import DailyChallengesCard from '@/components/DailyChallengesCard';
+import DailyRewardsModal from '@/components/DailyRewardsModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -116,9 +119,22 @@ export default function BattleScreen() {
     const [focusLabel, setFocusLabel] = useState('');
     const [showMatchmaking, setShowMatchmaking] = useState(false);
     const [showActiveBattle, setShowActiveBattle] = useState(false);
+    const [showDailyReward, setShowDailyReward] = useState(false);
+
+    const rewardsStore = useRewardsStore();
 
     const stats = battleStore.getStats();
     const currentRank = RANKS.find(r => r.level === pointsStore.currentLevel) || RANKS[0];
+
+    // Show daily reward on first visit + refresh challenges
+    useEffect(() => {
+        rewardsStore.refreshChallenges();
+        rewardsStore.checkComebackBonus();
+        // Show daily reward if not claimed today
+        if (!rewardsStore.dailyRewardClaimed || rewardsStore.lastLoginDate !== rewardsStore.getTodayString()) {
+            setTimeout(() => setShowDailyReward(true), 500);
+        }
+    }, []);
 
     // Handle FIND OPPONENT
     const handlePlay = async () => {
@@ -231,6 +247,18 @@ export default function BattleScreen() {
                     </Animated.View>
                 )}
 
+                {/* Active Multiplier Pill (Lucky Spin / Loss Recovery) */}
+                {rewardsStore.getActiveMultiplier() > 1 && (
+                    <Animated.View entering={FadeIn} style={styles.multiplierPill}>
+                        <Text style={styles.multiplierText}>
+                            ⚡ {rewardsStore.getActiveMultiplier().toFixed(1)}x XP ACTIVE
+                        </Text>
+                    </Animated.View>
+                )}
+
+                {/* Daily Challenges (Fortnite-style) */}
+                <DailyChallengesCard />
+
                 {/* Recent Battles */}
                 {battleStore.battleHistory.length > 0 && (
                     <Animated.View entering={FadeInDown.delay(500).springify()}>
@@ -287,6 +315,13 @@ export default function BattleScreen() {
                     onBattleEnd={() => {
                         setShowActiveBattle(false);
                     }}
+                />
+            )}
+            {/* Daily Rewards Modal */}
+            {showDailyReward && (
+                <DailyRewardsModal
+                    visible={showDailyReward}
+                    onClose={() => setShowDailyReward(false)}
                 />
             )}
         </View>
@@ -407,6 +442,13 @@ const styles = StyleSheet.create({
         borderWidth: 2, borderColor: '#FF6B35', backgroundColor: '#FFF3E0',
     },
     streakText: { fontSize: 14, fontWeight: '900', color: '#FF6B35', letterSpacing: 1 },
+
+    // Active Multiplier
+    multiplierPill: {
+        marginTop: 10, paddingVertical: 8, alignItems: 'center',
+        borderWidth: 2, borderColor: '#9C27B0', backgroundColor: '#F3E5F5',
+    },
+    multiplierText: { fontSize: 13, fontWeight: '900', color: '#9C27B0', letterSpacing: 1 },
 
     // History
     historyCard: {

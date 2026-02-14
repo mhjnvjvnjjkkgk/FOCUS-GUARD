@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { ActiveBattle } from '@/store/battleStore';
+import { calculateNearMiss, useRewardsStore } from '@/store/rewardsStore';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -112,6 +113,31 @@ export default function BattleResultModal({ battle, onClose, onPlayAgain }: Prop
                 {!isWin && !isTie && <Text style={styles.xpSubtext}>💪 You still earned XP for focusing</Text>}
             </Animated.View>
 
+            {/* Near-Miss Banner (Slot Machine Psychology) */}
+            {(() => {
+                const nearMiss = calculateNearMiss(
+                    battle.myFocusSeconds,
+                    battle.opponentTargetSeconds,
+                    battle.categoryConfig.maxMinutes
+                );
+                if (nearMiss.isNearMiss) {
+                    return (
+                        <Animated.View entering={FadeIn.delay(1200)} style={styles.nearMissBanner}>
+                            <Text style={styles.nearMissText}>{nearMiss.message}</Text>
+                        </Animated.View>
+                    );
+                }
+                return null;
+            })()}
+
+            {/* Loss Recovery Offer (Casino Comps) */}
+            {!isWin && !isTie && (
+                <Animated.View entering={FadeIn.delay(1400)} style={styles.recoveryBanner}>
+                    <Text style={styles.recoveryText}>🔥 Quick Rematch — 1.5x XP next win!</Text>
+                    <Text style={styles.recoveryTimer}>30 min offer</Text>
+                </Animated.View>
+            )}
+
             {/* Action Buttons */}
             <Animated.View style={[styles.buttonsContainer, buttonsStyle]}>
                 <Pressable
@@ -178,4 +204,19 @@ const styles = StyleSheet.create({
         borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', paddingVertical: 12, alignItems: 'center',
     },
     backBtnText: { fontSize: 14, fontWeight: '800', color: '#AAA', letterSpacing: 1 },
+
+    // Near-miss (slot machine psychology)
+    nearMissBanner: {
+        backgroundColor: 'rgba(255,165,0,0.15)', borderWidth: 2, borderColor: '#FF9800',
+        paddingVertical: 10, paddingHorizontal: 16, marginBottom: 16, width: '100%', alignItems: 'center',
+    },
+    nearMissText: { fontSize: 13, fontWeight: '800', color: '#FF9800', textAlign: 'center' },
+
+    // Loss recovery (casino comp)
+    recoveryBanner: {
+        backgroundColor: 'rgba(255,68,68,0.12)', borderWidth: 2, borderColor: '#FF4444',
+        paddingVertical: 10, paddingHorizontal: 16, marginBottom: 16, width: '100%', alignItems: 'center',
+    },
+    recoveryText: { fontSize: 12, fontWeight: '900', color: '#FF6B35' },
+    recoveryTimer: { fontSize: 9, fontWeight: '700', color: '#999', marginTop: 2 },
 });
