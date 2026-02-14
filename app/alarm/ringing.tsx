@@ -24,6 +24,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, BorderRadius, Shadows, FeatureColors } from '@/constants/Theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAlarmStore } from '@/store/alarmStore';
+import Svg, { Defs, LinearGradient, Stop, Pattern, Rect, Line as SvgLine } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
@@ -397,12 +398,32 @@ function TypingTask({ text, onComplete }: TypingTaskProps) {
 
 import { usePointsStore } from '@/store/pointsStore';
 
+// Grid Background Component
+const GridBackground = () => (
+    <View style={styles.gridContainer}>
+        <Svg height="100%" width="100%">
+            <Defs>
+                <Pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <Rect width="40" height="40" fill="#fdfbf7" />
+                    <SvgLine x1="0" y1="0" x2="0" y2="40" stroke="#e0e0e0" strokeWidth="1" />
+                    <SvgLine x1="0" y1="0" x2="40" y2="0" stroke="#e0e0e0" strokeWidth="1" />
+                </Pattern>
+            </Defs>
+            <Rect width="100%" height="100%" fill="url(#grid)" />
+        </Svg>
+    </View>
+);
+
+// Paper Tape Decoration
+const PaperTape = ({ color = '#3498db', style }: { color?: string, style?: any }) => (
+    <View style={[styles.tape, { backgroundColor: color }, style]}>
+        <View style={styles.tapeRip} />
+    </View>
+);
+
 // Main Alarm Ringing Screen
 export default function AlarmRingingScreen() {
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
     const params = useLocalSearchParams<{ id: string }>();
-
     const alarm = useAlarmStore(state => state.getAlarm(params.id || ''));
     const pointsStore = usePointsStore();
     const today = new Date().toISOString().split('T')[0];
@@ -412,29 +433,27 @@ export default function AlarmRingingScreen() {
 
     // Animations
     const pulseScale = useSharedValue(1);
-    const bellRotation = useSharedValue(0);
+    const glowOpacity = useSharedValue(0.5);
 
     useEffect(() => {
-        // Pulse animation
+        // Pulse animation for Time
         pulseScale.value = withRepeat(
             withSequence(
-                withTiming(1.15, { duration: 500 }),
-                withTiming(1, { duration: 500 })
+                withTiming(1.05, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+                withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
             ),
             -1,
             true
         );
 
-        // Bell shake animation
-        bellRotation.value = withRepeat(
+        // Glow Animation
+        glowOpacity.value = withRepeat(
             withSequence(
-                withTiming(-15, { duration: 100 }),
-                withTiming(15, { duration: 100 }),
-                withTiming(-10, { duration: 100 }),
-                withTiming(10, { duration: 100 }),
-                withTiming(0, { duration: 100 })
+                withTiming(1, { duration: 1000 }),
+                withTiming(0.4, { duration: 1000 })
             ),
-            -1
+            -1,
+            true
         );
 
         // Vibration pattern
@@ -450,26 +469,32 @@ export default function AlarmRingingScreen() {
         transform: [{ scale: pulseScale.value }],
     }));
 
-    const bellStyle = useAnimatedStyle(() => ({
-        transform: [{ rotate: `${bellRotation.value}deg` }],
+    const glowStyle = useAnimatedStyle(() => ({
+        textShadowRadius: interpolate(glowOpacity.value, [0.4, 1], [10, 30]),
+        opacity: interpolate(glowOpacity.value, [0.4, 1], [0.8, 1])
     }));
+
+    // Helper interpolate function since not imported
+    function interpolate(value: number, input: number[], output: number[]) {
+        'worklet';
+        // Simple linear interpolation
+        const range = input[1] - input[0];
+        const outRange = output[1] - output[0];
+        const ratio = (value - input[0]) / range;
+        return output[0] + ratio * outRange;
+    }
+
 
     const handleSnooze = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         Vibration.cancel();
         setSnoozesUsed(s => s + 1);
-
-        // Record snooze (deduct points)
         pointsStore.recordAlarmTriggered(today, true);
-
-        // Navigate back and schedule snooze
         router.back();
     };
 
     const handleDismiss = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-
-        // Check if task is required
         if (alarm?.dismissTask.type && alarm.dismissTask.type !== 'none') {
             setShowTask(true);
             Vibration.cancel();
@@ -482,67 +507,36 @@ export default function AlarmRingingScreen() {
         Vibration.cancel();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Record successful wake
         if (snoozesUsed === 0) {
             pointsStore.recordAlarmTriggered(today, false);
         } else {
             pointsStore.recordWakeUpWithSnooze(today);
         }
-
         router.back();
     };
 
-    // Format current time
+    // Format Data
     const now = new Date();
     const currentTime = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2, '0')}`;
     const period = now.getHours() >= 12 ? 'PM' : 'AM';
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
 
-    // Render task based on type
+    // Task Rendering
     const renderTask = () => {
         if (!alarm?.dismissTask) return null;
-
-        switch (alarm.dismissTask.type) {
-            case 'math':
-                return (
-                    <MathTask
-                        difficulty={alarm.dismissTask.mathDifficulty || 'medium'}
-                        count={alarm.dismissTask.mathCount || 3}
-                        onComplete={completeDismiss}
-                    />
-                );
-            case 'shake':
-                return (
-                    <ShakeTask
-                        intensity={alarm.dismissTask.shakeIntensity || 'medium'}
-                        duration={alarm.dismissTask.shakeDuration || 15}
-                        onComplete={completeDismiss}
-                    />
-                );
-            case 'breathing':
-                return (
-                    <BreathingTask
-                        cycles={alarm.dismissTask.breathingCycles || 3}
-                        inhale={alarm.dismissTask.breathingInhale || 4}
-                        hold={alarm.dismissTask.breathingHold || 4}
-                        exhale={alarm.dismissTask.breathingExhale || 4}
-                        onComplete={completeDismiss}
-                    />
-                );
-            case 'typing':
-                return (
-                    <TypingTask
-                        text={alarm.dismissTask.typingText || 'I am awake and ready'}
-                        onComplete={completeDismiss}
-                    />
-                );
-            default:
-                return null;
+        const taskType = alarm.dismissTask.type;
+        switch (taskType) {
+            case 'math': return <MathTask difficulty={alarm.dismissTask.mathDifficulty || 'medium'} count={alarm.dismissTask.mathCount || 3} onComplete={completeDismiss} />;
+            case 'shake': return <ShakeTask intensity={alarm.dismissTask.shakeIntensity || 'medium'} duration={alarm.dismissTask.shakeDuration || 15} onComplete={completeDismiss} />;
+            case 'breathing': return <BreathingTask cycles={alarm.dismissTask.breathingCycles || 3} inhale={alarm.dismissTask.breathingInhale || 4} hold={alarm.dismissTask.breathingHold || 4} exhale={alarm.dismissTask.breathingExhale || 4} onComplete={completeDismiss} />;
+            case 'typing': return <TypingTask text={alarm.dismissTask.typingText || 'I am awake'} onComplete={completeDismiss} />;
+            default: return null;
         }
     };
 
     if (showTask) {
         return (
-            <View style={[styles.container, styles.taskScreen]}>
+            <View style={[styles.container, { backgroundColor: '#111' }]}>
                 <Stack.Screen options={{ headerShown: false }} />
                 {renderTask()}
             </View>
@@ -550,181 +544,183 @@ export default function AlarmRingingScreen() {
     }
 
     return (
-        <View style={[styles.container, isDark && styles.containerDark]}>
+        <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
+            <GridBackground />
 
-            {/* Background Pulse */}
-            <Animated.View style={[styles.pulseBackground, pulseStyle]} />
+            {/* Decorations */}
+            <PaperTape color="#E74C3C" style={{ position: 'absolute', top: -20, left: 40, transform: [{ rotate: '-15deg' }], width: 60, height: 80 }} />
+            <PaperTape color="#3498DB" style={{ position: 'absolute', top: -10, right: 20, transform: [{ rotate: '10deg' }], width: 70, height: 90 }} />
 
-            {/* Time Display */}
-            <View style={styles.timeContainer}>
-                <Animated.View style={bellStyle}>
-                    <Text style={styles.bellIcon}>🔔</Text>
+            <PaperTape color="#E74C3C" style={{ position: 'absolute', bottom: 100, left: -20, transform: [{ rotate: '5deg' }], width: 60, height: 80 }} />
+            <PaperTape color="#3498DB" style={{ position: 'absolute', bottom: 150, right: -10, transform: [{ rotate: '-8deg' }], width: 50, height: 100 }} />
+
+
+            {/* Content */}
+            <View style={styles.content}>
+
+                {/* Date Label */}
+                <View style={styles.dateTag}>
+                    <Text style={styles.dateText}>{dateStr} 🔔</Text>
+                </View>
+
+                {/* Time Display */}
+                <Animated.View style={[styles.timeWrapper, pulseStyle]}>
+                    <Animated.Text style={[styles.timeText, glowStyle]}>
+                        {currentTime} <Text style={{ fontSize: 50 }}>{period}</Text>
+                    </Animated.Text>
                 </Animated.View>
-                <Text style={styles.timeText}>{currentTime}</Text>
-                <Text style={styles.periodText}>{period}</Text>
-            </View>
 
-            {/* Alarm Info */}
-            <View style={styles.infoContainer}>
-                <Text style={styles.alarmLabel}>{alarm?.label || 'Alarm'}</Text>
-                {alarm?.dismissTask.type !== 'none' && (
-                    <View style={styles.taskBadge}>
-                        <Text style={styles.taskBadgeText}>
-                            {alarm?.dismissTask.type === 'math' && '🧮 Math Problem'}
-                            {alarm?.dismissTask.type === 'shake' && '📳 Shake Phone'}
-                            {alarm?.dismissTask.type === 'breathing' && '🧘 Breathing'}
-                            {alarm?.dismissTask.type === 'walk' && '🚶 Walking'}
-                            {alarm?.dismissTask.type === 'typing' && '⌨️ Typing'}
-                        </Text>
-                    </View>
-                )}
-            </View>
+                {/* Wake Up Label */}
+                <View style={styles.wakeUpTag}>
+                    <Text style={styles.wakeUpText}>WAKE UP! ({alarm?.label.toUpperCase() || 'ALARM'})</Text>
+                </View>
 
-            {/* Action Buttons */}
-            <View style={styles.actionsContainer}>
-                {/* Snooze Button */}
-                {alarm?.snoozeEnabled && snoozesUsed < (alarm.snoozeLimit || 3) && (
-                    <Pressable style={styles.snoozeButton} onPress={handleSnooze}>
-                        <Ionicons name="time-outline" size={28} color={Colors.text.inverse} />
-                        <Text style={styles.snoozeText}>
-                            Snooze {alarm.snoozeDuration}m
-                        </Text>
+                {/* Spacer */}
+                <View style={{ flex: 1 }} />
+
+                {/* DISMISS BUTTON */}
+                <Pressable onPress={handleDismiss} style={({ pressed }) => [
+                    styles.dismissBtn,
+                    pressed && { transform: [{ translateY: 4 }, { translateX: 4 }], shadowOpacity: 0 }
+                ]}>
+                    <Text style={styles.dismissBtnText}>DISMISS</Text>
+                </Pressable>
+
+                {/* SNOOZE BUTTON */}
+                {alarm?.snoozeEnabled && (
+                    <Pressable onPress={handleSnooze} style={({ pressed }) => [
+                        styles.snoozeBtn,
+                        pressed && { transform: [{ translateY: 4 }, { translateX: 4 }], shadowOpacity: 0 }
+                    ]}>
+                        <Text style={styles.snoozeBtnText}>SNOOZE</Text>
                     </Pressable>
                 )}
 
-                {/* Dismiss Button */}
-                <Pressable style={styles.dismissButton} onPress={handleDismiss}>
-                    <View style={styles.dismissInner}>
-                        <Ionicons name="checkmark" size={36} color={FeatureColors.alarm.primary} />
-                    </View>
-                    <Text style={styles.dismissText}>Dismiss</Text>
-                </Pressable>
+                <View style={{ height: 60 }} />
             </View>
-
-            {/* Snooze Count */}
-            {alarm?.snoozeEnabled && snoozesUsed > 0 && (
-                <Text style={styles.snoozeCount}>
-                    Snoozed {snoozesUsed} / {alarm.snoozeLimit || 3} times
-                </Text>
-            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    // NEW STYLES
     container: {
         flex: 1,
-        backgroundColor: '#1a1a2e',
+        backgroundColor: '#FDFBF7', // Off-white paper
+        overflow: 'hidden',
+    },
+    gridContainer: {
+        ...StyleSheet.absoluteFillObject,
+        opacity: 0.6,
+    },
+    content: {
+        flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
+        paddingTop: 80,
     },
-    containerDark: {
-        backgroundColor: '#0f0f1a',
+    dateTag: {
+        backgroundColor: '#F0F0F0',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderWidth: 2,
+        borderColor: '#000',
+        transform: [{ rotate: '-2deg' }],
+        shadowColor: '#000',
+        shadowOffset: { width: 3, height: 3 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        marginBottom: 80,
     },
-    taskScreen: {
-        backgroundColor: Colors.gray[900],
+    dateText: {
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: 18,
+        color: '#000',
     },
-
-    // Pulse Background
-    pulseBackground: {
-        position: 'absolute',
-        width: width * 0.8,
-        height: width * 0.8,
-        borderRadius: width * 0.4,
-        backgroundColor: FeatureColors.alarm.primary + '20',
-    },
-
-    // Time
-    timeContainer: {
-        alignItems: 'center',
-        marginBottom: Spacing[8],
-    },
-    bellIcon: {
-        fontSize: 48,
-        marginBottom: Spacing[4],
+    timeWrapper: {
+        marginBottom: 40,
     },
     timeText: {
-        fontSize: 80,
-        fontWeight: '200',
-        color: Colors.text.inverse,
-        letterSpacing: -4,
+        fontSize: 100,
+        fontWeight: '900',
+        color: '#000',
+        textShadowColor: '#FF4500',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 20,
+        letterSpacing: -2,
     },
-    periodText: {
-        fontSize: 24,
-        fontWeight: '300',
-        color: Colors.gray[400],
-        marginTop: -8,
+    wakeUpTag: {
+        backgroundColor: '#ECE5CD', // Masking tape color
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        transform: [{ rotate: '1.5deg' }],
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 1,
     },
-
-    // Info
-    infoContainer: {
-        alignItems: 'center',
-        marginBottom: Spacing[12],
+    wakeUpText: {
+        fontFamily: 'monospace',
+        fontWeight: 'bold',
+        fontSize: 20,
+        color: '#000',
+        letterSpacing: 1,
     },
-    alarmLabel: {
-        fontSize: 24,
-        fontWeight: '500',
-        color: Colors.text.inverse,
-        marginBottom: Spacing[3],
-    },
-    taskBadge: {
-        backgroundColor: FeatureColors.alarm.primary + '30',
-        paddingHorizontal: Spacing[4],
-        paddingVertical: Spacing[2],
-        borderRadius: BorderRadius.full,
-    },
-    taskBadgeText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: FeatureColors.alarm.primary,
-    },
-
-    // Actions
-    actionsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing[6],
-    },
-    snoozeButton: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 80,
+    dismissBtn: {
+        width: width * 0.85,
         height: 80,
-        borderRadius: 40,
-        backgroundColor: Colors.gray[700],
-    },
-    snoozeText: {
-        fontSize: 11,
-        color: Colors.text.inverse,
-        marginTop: 4,
-    },
-    dismissButton: {
-        alignItems: 'center',
-    },
-    dismissInner: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: Colors.text.inverse,
+        backgroundColor: '#333',
+        borderWidth: 3,
+        borderColor: '#000',
         alignItems: 'center',
         justifyContent: 'center',
-        ...Shadows.lg,
+        marginBottom: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 8, height: 8 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        borderRadius: 4,
     },
-    dismissText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: Colors.text.inverse,
-        marginTop: Spacing[2],
+    dismissBtnText: {
+        fontSize: 32,
+        fontWeight: '900',
+        color: '#FFF',
+        letterSpacing: 2,
     },
-    snoozeCount: {
-        position: 'absolute',
-        bottom: 50,
-        fontSize: 13,
-        color: Colors.gray[500],
+    snoozeBtn: {
+        width: width * 0.5,
+        height: 50,
+        backgroundColor: '#FF4500',
+        borderWidth: 3,
+        borderColor: '#000',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 6, height: 6 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+    },
+    snoozeBtnText: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: '#000',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+    },
+    tape: {
+        borderWidth: 2,
+        borderColor: '#000',
+        shadowColor: '#000',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 0,
+    },
+    tapeRip: {
+        // Aesthetic placeholder for ripped edge
     },
 
-    // Task Container
+    // OLD TASK STYLES (Preserved)
     taskContainer: {
         flex: 1,
         alignItems: 'center',
@@ -743,8 +739,6 @@ const styles = StyleSheet.create({
         color: Colors.gray[400],
         marginBottom: Spacing[8],
     },
-
-    // Shake Task
     progressCircle: {
         width: 150,
         height: 150,
@@ -783,8 +777,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: Colors.text.inverse,
     },
-
-    // Math Task
     problemCard: {
         backgroundColor: Colors.gray[800],
         paddingHorizontal: Spacing[8],
@@ -856,8 +848,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: Colors.text.inverse,
     },
-
-    // Breathing Task
     breathCircle: {
         width: 200,
         height: 200,
@@ -881,8 +871,6 @@ const styles = StyleSheet.create({
         color: Colors.gray[400],
         fontStyle: 'italic',
     },
-
-    // Typing Task
     phraseBox: {
         backgroundColor: Colors.gray[800],
         paddingHorizontal: Spacing[6],

@@ -4,6 +4,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, collection, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '@/configs/firebaseConfig';
+
+const syncPlanToFirestore = (date: string, plan: DailyPlan) => {
+    const user = auth.currentUser;
+    if (user && db) {
+        setDoc(doc(db, `users/${user.uid}/dailyPlans`, date), plan, { merge: true });
+    }
+};
 
 // Types
 export interface FocusConfig {
@@ -150,7 +159,13 @@ interface PlannerState {
     // Utilities
     getDailyStats: (date: string) => DailyPlan['summary'] | undefined;
     clearOldPlans: (daysToKeep: number) => void;
+
+    // Firebase Sync
+    syncWithFirestore: () => Promise<void>;
+    stopSync: () => void;
 }
+
+let unsubscribeFirestore: (() => void) | null = null;
 
 // Helpers
 const generateId = () => `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -246,6 +261,9 @@ export const usePlannerStore = create<PlannerState>()(
                     };
                 });
 
+                // Sync
+                syncPlanToFirestore(taskData.date, get().dailyPlans[taskData.date]);
+
                 return id;
             },
 
@@ -267,6 +285,9 @@ export const usePlannerStore = create<PlannerState>()(
                         },
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             deleteTask: (id, date) => {
@@ -284,6 +305,9 @@ export const usePlannerStore = create<PlannerState>()(
                         },
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             duplicateTask: (id, fromDate, toDate) => {
@@ -291,6 +315,7 @@ export const usePlannerStore = create<PlannerState>()(
                 if (!task) return;
 
                 const { id: _, createdAt, updatedAt, status, currentSessionIndex, sessions, metrics, ...taskData } = task;
+                // createNewTask will handle the sync
                 get().createTask({ ...taskData, date: toDate });
             },
 
@@ -319,6 +344,9 @@ export const usePlannerStore = create<PlannerState>()(
                         activeTaskId: taskId,
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             startSession: (taskId, date, sessionIndex) => {
@@ -358,6 +386,9 @@ export const usePlannerStore = create<PlannerState>()(
                         isOnBreak: false,
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             completeSession: (taskId, date, sessionIndex, rating) => {
@@ -373,6 +404,7 @@ export const usePlannerStore = create<PlannerState>()(
                             if (idx !== sessionIndex) return session;
 
                             const startedAt = session.startedAt ? new Date(session.startedAt) : new Date();
+                            // Calculate simple minutes if not tracked precisely or rely on input
                             const actualDuration = Math.floor((Date.now() - startedAt.getTime()) / 60000);
 
                             return {
@@ -424,6 +456,9 @@ export const usePlannerStore = create<PlannerState>()(
                         activeSessionId: null,
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             skipSession: (taskId, date, sessionIndex) => {
@@ -462,6 +497,9 @@ export const usePlannerStore = create<PlannerState>()(
                         activeSessionId: null,
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             skipTask: (taskId, date) => {
@@ -494,6 +532,9 @@ export const usePlannerStore = create<PlannerState>()(
                         isSessionActive: false,
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             completeTask: (taskId, date) => {
@@ -531,6 +572,9 @@ export const usePlannerStore = create<PlannerState>()(
                         isSessionActive: false,
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             startBreak: (durationMinutes) => {
@@ -573,6 +617,9 @@ export const usePlannerStore = create<PlannerState>()(
                         },
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             recordTaskSession: (taskId, date, sessionIndex, completionRate, focusMinutes) => {
@@ -620,6 +667,9 @@ export const usePlannerStore = create<PlannerState>()(
                         },
                     };
                 });
+
+                // Sync
+                syncPlanToFirestore(date, get().dailyPlans[date]);
             },
 
             getTodaysPlan: () => {
@@ -689,6 +739,7 @@ export const usePlannerStore = create<PlannerState>()(
                     tasksCompleted,
                     totalFocusMinutes,
                     pointsEarned,
+                    pointsDeducted: 0, // Should be calculated if not present?
                 };
             },
 
@@ -703,6 +754,45 @@ export const usePlannerStore = create<PlannerState>()(
                     );
                     return { dailyPlans };
                 });
+            },
+
+            syncWithFirestore: async () => {
+                const currentUser = auth.currentUser;
+                if (!currentUser || !db) return;
+
+                const uid = currentUser.uid;
+                const dailyPlansCollectionRef = collection(db, `users/${uid}/dailyPlans`);
+
+                // Unsubscribe previous listener
+                if (unsubscribeFirestore) {
+                    unsubscribeFirestore();
+                }
+
+                unsubscribeFirestore = onSnapshot(dailyPlansCollectionRef, (snapshot) => {
+                    set((state) => {
+                        const newDailyPlans = { ...state.dailyPlans };
+
+                        snapshot.docChanges().forEach((change) => {
+                            const date = change.doc.id;
+                            const data = change.doc.data() as DailyPlan;
+
+                            if (change.type === 'added' || change.type === 'modified') {
+                                newDailyPlans[date] = data;
+                            } else if (change.type === 'removed') {
+                                delete newDailyPlans[date];
+                            }
+                        });
+
+                        return { dailyPlans: newDailyPlans };
+                    });
+                });
+            },
+
+            stopSync: () => {
+                if (unsubscribeFirestore) {
+                    unsubscribeFirestore();
+                    unsubscribeFirestore = null;
+                }
             },
         }),
         {

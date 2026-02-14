@@ -4,6 +4,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth, db } from '@/configs/firebaseConfig';
+import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
+import { ALL_ACHIEVEMENTS } from '@/data/achievements';
 
 // Points configuration - MATCHES MASTER PROMPT SPEC
 export const POINTS_CONFIG = {
@@ -124,7 +127,8 @@ export interface Achievement {
     description: string;
     icon: string;
     requirement: number;
-    category: 'focus' | 'alarm' | 'streak' | 'points' | 'tasks';
+    category: 'focus' | 'alarm' | 'streak' | 'points' | 'tasks' | 'sessions' | 'milestone' | 'legendary';
+    bonusPoints: number;
     unlockedAt?: string;
 }
 
@@ -150,8 +154,8 @@ interface PointsState {
     dailyGoal: number;
 
     // Actions - Points
-    addPoints: (date: string, category: keyof PointsEarned, amount: number) => void;
-    deductPoints: (date: string, category: keyof PointsDeducted, amount: number) => void;
+    addPoints: (date: string, category: keyof PointsEarned, amount: number) => Promise<void>;
+    deductPoints: (date: string, category: keyof PointsDeducted, amount: number) => Promise<void>;
 
     // Actions - Metrics
     recordAlarmTriggered: (date: string, snoozed: boolean) => void;
@@ -185,34 +189,14 @@ interface PointsState {
     getPointsTrend: (days: number) => { date: string; points: number }[];
     getAverageDaily: () => number;
     getBestDay: () => { date: string; points: number } | undefined;
+
+    // Cloud Sync
+    syncWithFirestore: () => void;
+    stopSync: () => void;
 }
 
-// Default achievements
-const DEFAULT_ACHIEVEMENTS: Achievement[] = [
-    // Focus achievements
-    { id: 'focus_1h', name: 'First Hour', description: 'Focus for 1 hour total', icon: '⏱️', requirement: 60, category: 'focus' },
-    { id: 'focus_10h', name: 'Focus Master', description: 'Focus for 10 hours total', icon: '🎯', requirement: 600, category: 'focus' },
-    { id: 'focus_50h', name: 'Focus Legend', description: 'Focus for 50 hours total', icon: '🏆', requirement: 3000, category: 'focus' },
-
-    // Alarm achievements
-    { id: 'alarm_nosnooze_5', name: 'Early Riser', description: 'Wake without snoozing 5 times', icon: '🌅', requirement: 5, category: 'alarm' },
-    { id: 'alarm_nosnooze_30', name: 'Morning Champion', description: 'Wake without snoozing 30 times', icon: '☀️', requirement: 30, category: 'alarm' },
-
-    // Streak achievements
-    { id: 'streak_3', name: 'Getting Started', description: '3 day streak', icon: '🔥', requirement: 3, category: 'streak' },
-    { id: 'streak_7', name: 'Week Warrior', description: '7 day streak', icon: '💪', requirement: 7, category: 'streak' },
-    { id: 'streak_30', name: 'Monthly Master', description: '30 day streak', icon: '👑', requirement: 30, category: 'streak' },
-
-    // Points achievements
-    { id: 'points_1000', name: 'Point Collector', description: 'Earn 1,000 total points', icon: '⭐', requirement: 1000, category: 'points' },
-    { id: 'points_10000', name: 'Point Hoarder', description: 'Earn 10,000 total points', icon: '🌟', requirement: 10000, category: 'points' },
-    { id: 'points_50000', name: 'Point Tycoon', description: 'Earn 50,000 total points', icon: '💎', requirement: 50000, category: 'points' },
-
-    // Task achievements
-    { id: 'tasks_10', name: 'Task Starter', description: 'Complete 10 tasks', icon: '✅', requirement: 10, category: 'tasks' },
-    { id: 'tasks_50', name: 'Task Master', description: 'Complete 50 tasks', icon: '📋', requirement: 50, category: 'tasks' },
-    { id: 'tasks_100', name: 'Task Legend', description: 'Complete 100 tasks', icon: '🎖️', requirement: 100, category: 'tasks' },
-];
+// Achievements are imported from data/achievements.ts
+// ALL_ACHIEVEMENTS contains 100 achievements across 8 categories
 
 // Helpers
 const getTodayString = () => new Date().toISOString().split('T')[0];
@@ -255,6 +239,8 @@ const createEmptyDailyPoints = (date: string, goalPoints: number): DailyPoints =
     sessions: [],
 });
 
+let unsubscribeFirestore: (() => void) | null = null;
+
 export const usePointsStore = create<PointsState>()(
     persist(
         (set, get) => ({
@@ -266,10 +252,10 @@ export const usePointsStore = create<PointsState>()(
             totalFocusMinutes: 0,
             totalTasksCompleted: 0,
             totalSessionsCompleted: 0,
-            achievements: DEFAULT_ACHIEVEMENTS,
+            achievements: ALL_ACHIEVEMENTS,
             dailyGoal: 200, // Default 200 per master prompt (adjustable 100-500)
 
-            addPoints: (date, category, amount) => {
+            addPoints: async (date, category, amount) => {
                 set((state) => {
                     const dailyPoints = state.history[date] || createEmptyDailyPoints(date, state.dailyGoal);
 
@@ -295,9 +281,31 @@ export const usePointsStore = create<PointsState>()(
                         totalPointsEarned: state.totalPointsEarned + amount,
                     };
                 });
+
+                const user = auth.currentUser;
+                if (user) {
+                    const state = get();
+                    const daily = state.history[date];
+                    try {
+                        // Sync Day
+                        await setDoc(doc(db, 'users', user.uid, 'history', date), daily, { merge: true });
+                        // Sync Globals
+                        await setDoc(doc(db, 'users', user.uid), {
+                            totalPointsEarned: state.totalPointsEarned,
+                            totalPointsDeducted: state.totalPointsDeducted,
+                            totalFocusMinutes: state.totalFocusMinutes,
+                            totalTasksCompleted: state.totalTasksCompleted,
+                            totalSessionsCompleted: state.totalSessionsCompleted,
+                            currentStreak: state.currentStreak,
+                            longestStreak: state.longestStreak
+                        }, { merge: true });
+                    } catch (e) {
+                        console.error('Firestore Sync Error:', e);
+                    }
+                }
             },
 
-            deductPoints: (date, category, amount) => {
+            deductPoints: async (date, category, amount) => {
                 set((state) => {
                     const dailyPoints = state.history[date] || createEmptyDailyPoints(date, state.dailyGoal);
 
@@ -323,6 +331,26 @@ export const usePointsStore = create<PointsState>()(
                         totalPointsDeducted: state.totalPointsDeducted + Math.abs(amount),
                     };
                 });
+
+                const user = auth.currentUser;
+                if (user) {
+                    const state = get();
+                    const daily = state.history[date];
+                    try {
+                        await setDoc(doc(db, 'users', user.uid, 'history', date), daily, { merge: true });
+                        await setDoc(doc(db, 'users', user.uid), {
+                            totalPointsEarned: state.totalPointsEarned,
+                            totalPointsDeducted: state.totalPointsDeducted,
+                            totalFocusMinutes: state.totalFocusMinutes,
+                            totalTasksCompleted: state.totalTasksCompleted,
+                            totalSessionsCompleted: state.totalSessionsCompleted,
+                            currentStreak: state.currentStreak,
+                            longestStreak: state.longestStreak
+                        }, { merge: true });
+                    } catch (e) {
+                        console.error('Firestore Sync Error:', e);
+                    }
+                }
             },
 
             recordAlarmTriggered: (date, snoozed) => {
@@ -592,35 +620,111 @@ export const usePointsStore = create<PointsState>()(
 
             checkAchievements: () => {
                 const state = get();
+                let bonusToAward = 0;
 
-                set((prev) => ({
-                    achievements: prev.achievements.map((ach) => {
-                        if (ach.unlockedAt) return ach; // Already unlocked
+                const updatedAchievements = state.achievements.map((ach) => {
+                    if (ach.unlockedAt) return ach;
 
-                        let unlocked = false;
+                    let unlocked = false;
 
-                        switch (ach.category) {
-                            case 'focus':
-                                unlocked = state.totalFocusMinutes >= ach.requirement;
-                                break;
-                            case 'streak':
-                                unlocked = state.longestStreak >= ach.requirement;
-                                break;
-                            case 'points':
-                                unlocked = state.totalPointsEarned >= ach.requirement;
-                                break;
-                            case 'tasks':
-                                unlocked = state.totalTasksCompleted >= ach.requirement;
-                                break;
+                    switch (ach.category) {
+                        case 'focus':
+                            unlocked = state.totalFocusMinutes >= ach.requirement;
+                            break;
+                        case 'streak':
+                            unlocked = state.longestStreak >= ach.requirement;
+                            break;
+                        case 'points':
+                            unlocked = state.totalPointsEarned >= ach.requirement;
+                            break;
+                        case 'tasks':
+                            unlocked = state.totalTasksCompleted >= ach.requirement;
+                            break;
+                        case 'sessions':
+                            unlocked = state.totalSessionsCompleted >= ach.requirement;
+                            break;
+                        case 'alarm': {
+                            let totalOnTime = 0;
+                            Object.values(state.history).forEach(day => {
+                                totalOnTime += day.alarmsOnTime || 0;
+                            });
+                            unlocked = totalOnTime >= ach.requirement;
+                            break;
                         }
+                        case 'milestone':
+                            if (ach.id === 'm10') {
+                                const cnt = state.achievements.filter(a => a.unlockedAt && a.id !== 'm10').length;
+                                unlocked = cnt >= ach.requirement;
+                            }
+                            break;
+                        case 'legendary':
+                            if (ach.id === 'l10') {
+                                const cnt = state.achievements.filter(a => a.unlockedAt && a.id !== 'l10').length;
+                                unlocked = cnt >= 99;
+                            }
+                            break;
+                    }
 
-                        if (unlocked) {
-                            return { ...ach, unlockedAt: new Date().toISOString() };
-                        }
+                    if (unlocked) {
+                        bonusToAward += ach.bonusPoints || 0;
+                        return { ...ach, unlockedAt: new Date().toISOString() };
+                    }
+                    return ach;
+                });
 
-                        return ach;
-                    }),
-                }));
+                set({
+                    achievements: updatedAchievements,
+                    totalPointsEarned: state.totalPointsEarned + bonusToAward,
+                });
+            },
+
+            syncWithFirestore: () => {
+                const user = auth.currentUser;
+                if (!user) return;
+
+                if (unsubscribeFirestore) unsubscribeFirestore();
+
+                // 1. Listen to User Globals
+                const unsubGlobals = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        set((state) => ({
+                            totalPointsEarned: data.totalPointsEarned ?? state.totalPointsEarned,
+                            totalPointsDeducted: data.totalPointsDeducted ?? state.totalPointsDeducted,
+                            currentStreak: data.currentStreak ?? state.currentStreak,
+                            longestStreak: data.longestStreak ?? state.longestStreak,
+                            totalFocusMinutes: data.totalFocusMinutes ?? state.totalFocusMinutes,
+                            totalTasksCompleted: data.totalTasksCompleted ?? state.totalTasksCompleted,
+                            totalSessionsCompleted: data.totalSessionsCompleted ?? state.totalSessionsCompleted,
+                        }));
+                    }
+                });
+
+                // 2. Listen to History
+                const unsubHistory = onSnapshot(collection(db, 'users', user.uid, 'history'), (snapshot) => {
+                    const updates: PointsHistory = {};
+                    snapshot.forEach(docSnap => {
+                        updates[docSnap.id] = docSnap.data() as DailyPoints;
+                    });
+
+                    if (Object.keys(updates).length > 0) {
+                        set(state => ({
+                            history: { ...state.history, ...updates }
+                        }));
+                    }
+                });
+
+                unsubscribeFirestore = () => {
+                    unsubGlobals();
+                    unsubHistory();
+                };
+            },
+
+            stopSync: () => {
+                if (unsubscribeFirestore) {
+                    unsubscribeFirestore();
+                    unsubscribeFirestore = null;
+                }
             },
 
             getTodaysPoints: () => {

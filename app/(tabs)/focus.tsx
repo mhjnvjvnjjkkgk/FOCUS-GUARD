@@ -24,6 +24,7 @@ import { useNavigation, useLocalSearchParams, router } from 'expo-router';
 
 import { usePointsStore, POINTS_CONFIG } from '@/store/pointsStore';
 import { usePlannerStore } from '@/store/plannerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // NEO CONSTANTS
 const NEO_BLACK = '#000000';
@@ -479,9 +480,11 @@ export default function FocusModeScreen() {
 
     const renderHeader = () => (
         <View style={styles.header}>
-            <View style={styles.avatarBox}>
-                <Text style={styles.avatarText}>FG</Text>
-            </View>
+            <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+                <View style={styles.avatarBox}>
+                    <Text style={styles.avatarText}>FG</Text>
+                </View>
+            </Pressable>
             <View>
                 <Text style={styles.appTitle}>FOCUSGUARD</Text>
                 <View style={styles.tag}>

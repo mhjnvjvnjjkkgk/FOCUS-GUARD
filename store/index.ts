@@ -7,6 +7,7 @@ export { useFocusStore } from './focusStore';
 export { useBlockerStore } from './blockerStore';
 export { usePlannerStore } from './plannerStore';
 export { usePointsStore, POINTS_CONFIG } from './pointsStore';
+export { useSettingsStore } from './settingsStore';
 
 // Re-export types
 export type { Alarm, DismissTask } from './alarmStore';

@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 
 import { useAlarmStore, Alarm } from '@/store/alarmStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // NEO-BRUTALIST CONSTANTS
 const NEO_BLACK = '#000000';
@@ -249,9 +250,11 @@ export default function AlarmsScreen() {
       >
         {/* FOCUSGUARD LOGO */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoBox}>
-            <Text style={styles.logoFG}>FG</Text>
-          </View>
+          <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+            <View style={styles.logoBox}>
+              <Text style={styles.logoFG}>FG</Text>
+            </View>
+          </Pressable>
           <View style={styles.logoTextColumn}>
             <Text style={styles.logoText}>FOCUSGUARD</Text>
             <View style={styles.logoTag}>

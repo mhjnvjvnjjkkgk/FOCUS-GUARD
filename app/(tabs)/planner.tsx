@@ -25,6 +25,7 @@ import { router } from 'expo-router';
 import { usePlannerStore, PlannedTask } from '@/store/plannerStore';
 // Keeping PointsStore for potential logic but seemingly unused in visual prompt
 import { usePointsStore } from '@/store/pointsStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const { width } = Dimensions.get('window');
 
@@ -61,13 +62,7 @@ const formatTime = (hour: number, minute: number) => {
     return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${period}`;
 };
 
-// Calculate end time given start time and duration in minutes
-const calculateEndTime = (startHour: number, startMinute: number, durationMinutes: number) => {
-    const totalMinutes = startHour * 60 + startMinute + durationMinutes;
-    const endHour = Math.floor(totalMinutes / 60) % 24;
-    const endMinute = totalMinutes % 60;
-    return { hour: endHour, minute: endMinute };
-};
+
 
 // ============================================
 // NEO HEADER
@@ -91,9 +86,11 @@ const NeoHeader = ({ date, onPrev, onNext }: NeoHeaderProps) => {
         <View style={styles.neoHeader}>
             {/* Top Bar: Branding */}
             <View style={styles.neoTopBar}>
-                <View style={styles.neoAvatarBox}>
-                    <Text style={styles.neoAvatarText}>FG</Text>
-                </View>
+                <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+                    <View style={styles.neoAvatarBox}>
+                        <Text style={styles.neoAvatarText}>FG</Text>
+                    </View>
+                </Pressable>
                 <View style={styles.neoTitleColumn}>
                     <Text style={styles.neoAppTitle}>FOCUSGUARD</Text>
                     <View style={styles.neoTagContainer}>
@@ -302,7 +299,7 @@ export default function PlannerScreen() {
                     { text: 'Cancel', style: 'cancel' },
                     {
                         text: 'Update',
-                        onPress: (text) => {
+                        onPress: (text?: string) => {
                             const newDuration = parseInt(text || '0');
                             if (newDuration > 0 && newDuration <= 180) {
                                 // TODO: Update task duration via store
@@ -332,7 +329,7 @@ export default function PlannerScreen() {
                                     { text: 'Cancel', style: 'cancel' },
                                     {
                                         text: 'Update',
-                                        onPress: (timeStr) => {
+                                        onPress: (timeStr?: string) => {
                                             // Parse AM/PM time
                                             const match = timeStr?.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
                                             if (match) {
@@ -370,7 +367,7 @@ export default function PlannerScreen() {
                                     { text: 'Cancel', style: 'cancel' },
                                     {
                                         text: 'Update',
-                                        onPress: (text) => {
+                                        onPress: (text?: string) => {
                                             const newDuration = parseInt(text || '0');
                                             if (newDuration > 0 && newDuration <= 240) {
                                                 // TODO: Update task duration via store
@@ -454,24 +451,7 @@ export default function PlannerScreen() {
                                     </Text>
                                     <Text style={styles.timeBlockArrow}>→</Text>
                                     <Text style={styles.timeBlockText}>
-                                        {(() => {
-                                            // Calculate total duration from focusConfig
-                                            const sessionCount = task.focusConfig?.sessionCount || 1;
-                                            const sessionDuration = task.focusConfig?.sessionDuration || 25;
-                                            const breakDuration = task.focusConfig?.breakDuration || 5;
-
-                                            const totalDuration = sessionCount > 0
-                                                ? (sessionDuration * sessionCount) + (breakDuration * (sessionCount - 1))
-                                                : 0;
-
-                                            // If no duration, show dash
-                                            if (totalDuration === 0) {
-                                                return '—';
-                                            }
-
-                                            const endTime = calculateEndTime(task.startTime.hour, task.startTime.minute, totalDuration);
-                                            return formatTime(endTime.hour, endTime.minute);
-                                        })()}
+                                        {formatTime(task.endTime.hour, task.endTime.minute)}
                                     </Text>
                                 </View>
                                 {/* Connector Line */}
@@ -662,6 +642,13 @@ const styles = StyleSheet.create({
         color: NEO.colors.white,
         fontWeight: NEO.fonts.heavy,
         fontSize: 14,
+    },
+    timeBlockArrow: {
+        color: NEO.colors.white,
+        fontWeight: NEO.fonts.heavy,
+        fontSize: 16,
+        marginVertical: 0,
+        textAlign: 'center',
     },
     connectorLine: {
         position: 'absolute',

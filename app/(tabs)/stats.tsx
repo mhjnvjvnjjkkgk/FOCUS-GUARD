@@ -34,6 +34,12 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePointsStore } from '@/store/pointsStore';
 import { usePlannerStore } from '@/store/plannerStore';
 import { useAlarmStore } from '@/store/alarmStore';
+import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import * as Google from 'expo-auth-session/providers/google';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { auth } from '@/configs/firebaseConfig';
+import { Image } from 'expo-image';
 
 const { width } = Dimensions.get('window');
 
@@ -665,6 +671,22 @@ export default function StatsScreen() {
     const pointsStore = usePointsStore();
     const plannerStore = usePlannerStore();
     const alarmStore = useAlarmStore();
+    const { user, logout, initializeListener } = useAuthStore();
+    const settingsStore = useSettingsStore();
+
+    // Google Auth Request
+    const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+        clientId: '77805130574-ofoq2k0q2u3vibi5cn6amfceauchulo3.apps.googleusercontent.com',
+    });
+
+    // Handle Google Auth response (credential exchange only — sync is in _layout.tsx)
+    useEffect(() => {
+        if (response?.type === 'success') {
+            const { id_token } = response.params;
+            const credential = GoogleAuthProvider.credential(id_token);
+            signInWithCredential(auth, credential);
+        }
+    }, [response]);
 
     // Trigger re-animation when period changes
     const handlePeriodChange = useCallback((newPeriod: Period) => {
@@ -762,30 +784,63 @@ export default function StatsScreen() {
             alarmPointsDeducted,
             alarmNetPoints: alarmPointsEarned - alarmPointsDeducted,
             dailyFocus,
-            pointsTrend: 15,
+            pointsTrend: (() => {
+                // Compute real trend: compare current period vs previous period
+                const prevDays = period === 'day' ? 1 : period === 'week' ? 7 : 30;
+                let prevTotal = 0;
+                for (let i = prevDays; i < prevDays * 2; i++) {
+                    const dateStr = getDateString(i);
+                    const dp = pointsStore.history[dateStr];
+                    if (dp) prevTotal += dp.totalEarned || 0;
+                }
+                if (prevTotal === 0) return totalPoints > 0 ? 100 : 0;
+                return Math.round(((totalPoints - prevTotal) / prevTotal) * 100);
+            })(),
         };
     }, [period, pointsStore]);
 
-    const achievements = useMemo(() => [
-        {
-            title: 'FOCUS MASTER',
-            description: 'REACH 100 HOURS OF FOCUS',
-            progress: Math.min(100, (pointsStore.totalFocusMinutes / 6000) * 100),
-            unlocked: pointsStore.totalFocusMinutes >= 6000,
-        },
-        {
-            title: 'STREAK CHAMPION',
-            description: 'ACHIEVE A 10-DAY STREAK',
-            progress: Math.min(100, (pointsStore.currentStreak / 10) * 100),
-            unlocked: pointsStore.longestStreak >= 10,
-        },
-        {
-            title: 'POINT COLLECTOR',
-            description: 'EARN 5,000 POINTS',
-            progress: Math.min(100, (pointsStore.totalPointsEarned / 5000) * 100),
-            unlocked: pointsStore.totalPointsEarned >= 5000,
-        },
-    ], [pointsStore]);
+    // Smart achievements: sorted by progress (nearest to unlocking first)
+    const smartAchievements = useMemo(() => {
+        const getProgress = (ach: any) => {
+            if (ach.unlockedAt) return 100;
+            let current = 0;
+            switch (ach.category) {
+                case 'focus': current = pointsStore.totalFocusMinutes; break;
+                case 'tasks': current = pointsStore.totalTasksCompleted; break;
+                case 'streak': current = pointsStore.longestStreak; break;
+                case 'points': current = pointsStore.totalPointsEarned; break;
+                case 'sessions': current = pointsStore.totalSessionsCompleted; break;
+                case 'alarm':
+                    Object.values(pointsStore.history).forEach(day => {
+                        current += day.alarmsOnTime || 0;
+                    });
+                    break;
+                default: current = 0;
+            }
+            return Math.min(100, (current / ach.requirement) * 100);
+        };
+
+        return [...pointsStore.achievements]
+            .map(ach => ({ ...ach, progress: getProgress(ach) }))
+            .sort((a, b) => {
+                // Unlocked last, then sort by progress descending (nearest to completion first)
+                if (a.progress >= 100 && b.progress < 100) return 1;
+                if (b.progress >= 100 && a.progress < 100) return -1;
+                return b.progress - a.progress;
+            })
+            .slice(0, 5);
+    }, [pointsStore]);
+
+    const unlockedCount = useMemo(() => {
+        return pointsStore.achievements.filter(a => a.unlockedAt).length;
+    }, [pointsStore.achievements]);
+
+    // Today goals progress
+    const todayStr = getDateString(0);
+    const todayPoints = pointsStore.history[todayStr];
+    const todayEarned = todayPoints?.totalEarned || 0;
+    const todayTasksDone = todayPoints?.tasksCompleted || 0;
+
 
     const maxChartValue = Math.max(...periodData.dailyFocus.map(d => d.value), 60);
 
@@ -800,13 +855,28 @@ export default function StatsScreen() {
                     entering={FadeInUp.delay(50).springify()}
                     style={styles.neoHeader}
                 >
-                    <View style={styles.neoAvatarBox}>
-                        <Text style={styles.neoAvatarText}>FG</Text>
-                    </View>
+                    <Pressable onPress={() => settingsStore.openSidebar()}>
+                        <View style={[styles.neoAvatarBox, { overflow: 'hidden' }]}>
+                            {user?.photoURL ? (
+                                <Image source={{ uri: user.photoURL }} style={{ width: '100%', height: '100%' }} />
+                            ) : (
+                                <Text style={styles.neoAvatarText}>FG</Text>
+                            )}
+                        </View>
+                    </Pressable>
                     <View style={styles.neoHeaderText}>
-                        <Text style={styles.neoTitle}>FOCUSGUARD</Text>
+                        <Text style={styles.neoTitle} numberOfLines={1}>
+                            {settingsStore.displayName || user?.displayName?.toUpperCase() || 'FOCUSGUARD'}
+                        </Text>
                         <View style={styles.neoSubtitleBox}>
-                            <Text style={styles.neoSubtitle}>📊 STATISTICS</Text>
+                            <Pressable
+                                onPress={() => { user ? logout() : promptAsync(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
+                                hitSlop={10}
+                            >
+                                <Text style={styles.neoSubtitle}>
+                                    {user ? 'LOGOUT ↗' : 'SIGN IN (GOOGLE) ↗'}
+                                </Text>
+                            </Pressable>
                         </View>
                     </View>
                 </Animated.View>
@@ -850,7 +920,7 @@ export default function StatsScreen() {
                         numericValue={periodData.netPoints}
                         label="NET POINTS"
                         accentColor={NEO.colors.yellow}
-                        trend={{ value: periodData.pointsTrend, isPositive: true }}
+                        trend={{ value: periodData.pointsTrend, isPositive: periodData.pointsTrend >= 0 }}
                         delay={200}
                     />
                     <NeoStatCard
@@ -932,16 +1002,51 @@ export default function StatsScreen() {
                     />
                 )}
 
+                {/* Goal Progress */}
+                <Animated.View
+                    entering={FadeInDown.delay(580).springify()}
+                    style={[styles.neoChartCard, { marginBottom: 16 }]}
+                >
+                    <Text style={[styles.neoChartTitle, { marginBottom: 12 }]}>📎 DAILY GOALS</Text>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <View style={{ flex: 1, borderWidth: NEO.border, borderColor: NEO.colors.black, padding: 12 }}>
+                            <Text style={{ fontSize: 10, fontWeight: NEO.fonts.heavy, letterSpacing: 1 }}>POINTS</Text>
+                            <Text style={{ fontSize: 24, fontWeight: NEO.fonts.heavy, marginTop: 4 }}>
+                                {todayEarned}
+                                <Text style={{ fontSize: 14, color: '#666' }}> / {settingsStore.dailyPointsGoal}</Text>
+                            </Text>
+                            <View style={{ height: 8, backgroundColor: '#E0E0E0', borderWidth: 2, borderColor: NEO.colors.black, marginTop: 8 }}>
+                                <View style={{ height: '100%', backgroundColor: todayEarned >= settingsStore.dailyPointsGoal ? NEO.colors.green : NEO.colors.yellow, width: `${Math.min(100, (todayEarned / settingsStore.dailyPointsGoal) * 100)}%` }} />
+                            </View>
+                        </View>
+                        <View style={{ flex: 1, borderWidth: NEO.border, borderColor: NEO.colors.black, padding: 12 }}>
+                            <Text style={{ fontSize: 10, fontWeight: NEO.fonts.heavy, letterSpacing: 1 }}>TASKS</Text>
+                            <Text style={{ fontSize: 24, fontWeight: NEO.fonts.heavy, marginTop: 4 }}>
+                                {todayTasksDone}
+                                <Text style={{ fontSize: 14, color: '#666' }}> / {settingsStore.dailyTasksGoal}</Text>
+                            </Text>
+                            <View style={{ height: 8, backgroundColor: '#E0E0E0', borderWidth: 2, borderColor: NEO.colors.black, marginTop: 8 }}>
+                                <View style={{ height: '100%', backgroundColor: todayTasksDone >= settingsStore.dailyTasksGoal ? NEO.colors.green : NEO.colors.orange, width: `${Math.min(100, (todayTasksDone / settingsStore.dailyTasksGoal) * 100)}%` }} />
+                            </View>
+                        </View>
+                    </View>
+                </Animated.View>
+
                 {/* Achievements */}
                 <View style={styles.neoAchievementsSection}>
-                    <Text style={styles.neoSectionTitle}>ACHIEVEMENTS</Text>
-                    {achievements.map((ach, index) => (
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={styles.neoSectionTitle}>ACHIEVEMENTS</Text>
+                        <View style={{ borderWidth: 2, borderColor: NEO.colors.black, backgroundColor: NEO.colors.yellow, paddingHorizontal: 8, paddingVertical: 3 }}>
+                            <Text style={{ fontSize: 11, fontWeight: NEO.fonts.heavy }}>{unlockedCount} / {pointsStore.achievements.length} UNLOCKED</Text>
+                        </View>
+                    </View>
+                    {smartAchievements.map((ach, index) => (
                         <NeoAchievement
-                            key={ach.title}
-                            title={ach.title}
-                            description={ach.description}
+                            key={ach.id}
+                            title={`${ach.icon} ${ach.name.toUpperCase()}`}
+                            description={ach.description.toUpperCase()}
                             progress={ach.progress}
-                            unlocked={ach.unlocked}
+                            unlocked={!!ach.unlockedAt}
                             delay={600 + index * 50}
                         />
                     ))}
@@ -975,7 +1080,8 @@ export default function StatsScreen() {
 
                 <View style={{ height: 160 }} />
             </ScrollView>
-        </View>
+
+        </View >
     );
 }
 
@@ -1068,13 +1174,13 @@ function NeoSessionCard({ session, delay = 0 }: NeoSessionCardProps) {
                     <View style={styles.neoSessionStatItem}>
                         <Text style={styles.neoSessionStatLabel}>💎 EARNED</Text>
                         <Text style={[styles.neoSessionStatValue, { color: NEO.colors.green }]}>
-                            +{session.pointsEarned} PTS
+                            +{Math.max(0, session.pointsEarned)} PTS
                         </Text>
                     </View>
                     <View style={styles.neoSessionStatItem}>
                         <Text style={styles.neoSessionStatLabel}>⚠️ DEDUCTED</Text>
                         <Text style={[styles.neoSessionStatValue, { color: NEO.colors.red }]}>
-                            {session.wasAbandoned || session.completionRate < 25 ? '-30' : '0'} PTS
+                            {session.pointsEarned < 0 ? session.pointsEarned : (session.wasAbandoned || session.completionRate < 25 ? '-30' : '0')} PTS
                         </Text>
                     </View>
                 </View>

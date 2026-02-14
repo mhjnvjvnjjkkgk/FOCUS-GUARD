@@ -17,6 +17,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // NEO-BRUTALIST CONSTANTS
 const NEO_BLACK = '#000000';
@@ -239,7 +240,7 @@ export default function BlockerScreen() {
                     style={styles.neoAvatarBox}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        Alert.alert('Profile', 'Profile/Login functionality coming soon!');
+                        useSettingsStore.getState().openSidebar();
                     }}
                 >
                     <Ionicons name="person" size={24} color={NEO_WHITE} />

@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 
 import { useReminderStore, Reminder } from '@/store';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 // ============================================
@@ -47,9 +48,11 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const MemoryHeader = () => (
     <View style={styles.headerContainer}>
         {/* Avatar Frame */}
-        <View style={styles.avatarFrame}>
-            <Text style={styles.avatarText}>FG</Text>
-        </View>
+        <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+            <View style={styles.avatarFrame}>
+                <Text style={styles.avatarText}>FG</Text>
+            </View>
+        </Pressable>
 
         {/* Title Block */}
         <View style={styles.titleBlock}>

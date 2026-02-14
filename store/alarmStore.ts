@@ -4,6 +4,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, collection, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '@/configs/firebaseConfig';
 
 // Types
 export interface DismissTask {
@@ -82,7 +84,13 @@ interface AlarmState {
     getAlarm: (id: string) => Alarm | undefined;
     getActiveAlarms: () => Alarm[];
     getNextAlarm: () => Alarm | undefined;
+
+    // Firebase Sync
+    syncWithFirestore: () => Promise<void>;
+    stopSync: () => void;
 }
+
+let unsubscribeFirestore: (() => void) | null = null;
 
 // Generate unique ID
 const generateId = () => `alarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -108,6 +116,11 @@ export const useAlarmStore = create<AlarmState>()(
                     alarms: [...state.alarms, newAlarm],
                 }));
 
+                // Sync to Firestore
+                if (auth.currentUser && db) {
+                    setDoc(doc(db, `users/${auth.currentUser.uid}/alarms`, id), newAlarm);
+                }
+
                 return id;
             },
 
@@ -119,12 +132,25 @@ export const useAlarmStore = create<AlarmState>()(
                             : alarm
                     ),
                 }));
+
+                // Sync to Firestore
+                if (auth.currentUser && db) {
+                    const updatedAlarm = get().getAlarm(id);
+                    if (updatedAlarm) {
+                        setDoc(doc(db, `users/${auth.currentUser.uid}/alarms`, id), updatedAlarm, { merge: true });
+                    }
+                }
             },
 
             deleteAlarm: (id) => {
                 set((state) => ({
                     alarms: state.alarms.filter((alarm) => alarm.id !== id),
                 }));
+
+                // Sync to Firestore
+                if (auth.currentUser && db) {
+                    deleteDoc(doc(db, `users/${auth.currentUser.uid}/alarms`, id));
+                }
             },
 
             toggleAlarm: (id) => {
@@ -135,6 +161,14 @@ export const useAlarmStore = create<AlarmState>()(
                             : alarm
                     ),
                 }));
+
+                // Sync to Firestore
+                if (auth.currentUser && db) {
+                    const updatedAlarm = get().getAlarm(id);
+                    if (updatedAlarm) {
+                        setDoc(doc(db, `users/${auth.currentUser.uid}/alarms`, id), updatedAlarm, { merge: true });
+                    }
+                }
             },
 
             incrementSnooze: (id) => {
@@ -194,6 +228,59 @@ export const useAlarmStore = create<AlarmState>()(
                 // Sort by next trigger time and return the soonest
                 alarmsWithNextTime.sort((a, b) => a.nextTime - b.nextTime);
                 return alarmsWithNextTime[0]?.alarm;
+            },
+
+            syncWithFirestore: async () => {
+                const currentUser = auth.currentUser;
+                if (!currentUser || !db) return;
+
+                const uid = currentUser.uid;
+                const alarmsCollectionRef = collection(db, `users/${uid}/alarms`);
+
+                // Unsubscribe previous listener
+                if (unsubscribeFirestore) {
+                    unsubscribeFirestore();
+                }
+
+                unsubscribeFirestore = onSnapshot(alarmsCollectionRef, (snapshot) => {
+                    const remoteAlarms: Alarm[] = [];
+                    snapshot.forEach((doc) => {
+                        remoteAlarms.push(doc.data() as Alarm);
+                    });
+
+                    // Simple merge strategy: if remote has data, override local?
+                    // Or merge by ID?
+                    // For simplicity, let's merge by ID, preferring remote if valid
+
+                    set((state) => {
+                        // Build a map of existing alarms
+                        const localMap = new Map(state.alarms.map(a => [a.id, a]));
+
+                        remoteAlarms.forEach(ra => {
+                            localMap.set(ra.id, ra);
+                        });
+
+                        // Note: This doesn't handle deletions from another device well if we just merge.
+                        // But for now, let's trust the snapshot represents the 'truth' if we treat it as a collection.
+                        // Actually, onSnapshot returns the whole collection. So `remoteAlarms` IS the state.
+
+                        // However, we might have local pending changes? 
+                        // Let's just set alarms to remoteAlarms if it's not empty?
+                        // But if we start with empty remote, we don't want to wipe local.
+
+                        if (remoteAlarms.length > 0) {
+                            return { alarms: remoteAlarms };
+                        }
+                        return state;
+                    });
+                });
+            },
+
+            stopSync: () => {
+                if (unsubscribeFirestore) {
+                    unsubscribeFirestore();
+                    unsubscribeFirestore = null;
+                }
             },
         }),
         {

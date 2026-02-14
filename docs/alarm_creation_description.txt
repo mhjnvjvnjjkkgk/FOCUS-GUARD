@@ -1,0 +1,138 @@
+# FocusGuard - Alarm Creation Screen Description
+
+## Overview
+
+The alarm creation interface in FocusGuard represents a comprehensive, user-friendly modal or full-screen experience designed to give users complete control over configuring their wake-up alarms. This creation flow is accessed by tapping the prominent Floating Action Button (FAB) located in the bottom-right corner of the Alarms tab. The FAB features a "+" icon and uses the signature orange accent color (#FF5500), maintaining visual consistency with the FocusGuard brand. When tapped, the creation modal slides up with a smooth spring animation, immediately capturing the user's attention.
+
+## Modal Header
+
+At the top of the alarm creation screen, users encounter a bold header that reads "Create Alarm" or "New Alarm" in a large, weighted font (24-28px, weight 700-900). The header is accompanied by a close button (typically an "X" icon) positioned in the top-right corner, allowing users to dismiss the modal and return to the main alarms list without saving. The header area features the same glassmorphism aesthetic found throughout the app, with a semi-transparent background that subtly blurs content behind it when the modal overlays the main screen.
+
+## Time Selection Section
+
+### Primary Time Picker
+
+The most prominent element in the alarm creation interface is the time picker, which occupies a central position in the upper portion of the screen. FocusGuard utilizes a modern scrollable wheel-style picker that displays hours and minutes separately, formatted in 12-hour time with AM/PM selection. The selected time values are displayed in an extra-large font (48-56 pixels) with ultra-bold weight (800-900), ensuring excellent readability even at a glance.
+
+The time picker uses a smooth scroll animation, with haptic feedback triggering on each value change to provide tactile confirmation. The currently selected time is highlighted with the orange accent color, while non-selected values appear in a muted gray. A subtle gradient fade effect is applied to values further from the selection point, creating visual depth and drawing focus to the chosen time.
+
+### AM/PM Toggle
+
+Adjacent to the time wheels, users find a segmented control or toggle switch that allows selection between AM and PM. This toggle features the Neo-Brutalist design language with bold borders (4px, black) and a clear selected state indicated by an orange background fill. The unselected state maintains a white or transparent background with black text, ensuring the distinction is immediately apparent.
+
+## Label Input Field
+
+Below the time selection, users encounter a text input field labeled "Alarm Label" or "Name (Optional)". This field allows users to assign meaningful names to their alarms, such as "Morning Workout", "Work Commute", or "Early Meeting". The input field features rounded corners, a solid border (2-3px) in a neutral gray that transitions to orange when focused, and placeholder text in a lighter gray that reads "e.g., Wake up for work".
+
+The field supports alphanumeric characters and emoji, enabling users to add personality to their alarm labels. When typing, the keyboard automatically capitalizes the first letter, and the input adapts to the user's system keyboard settings (light or dark theme).
+
+## Repeat Days Selector
+
+### Weekly Recurrence Interface
+
+One of the most critical configuration options is the repeat days selector, which determines on which days of the week the alarm will trigger. This section is introduced with a label reading "Repeat" or "Recurring Days" in a medium-weight font (600).
+
+The days are presented as a horizontal row of seven circular or rounded-square buttons, each displaying a single letter representing a day of the week: S (Sunday), M (Monday), T (Tuesday), W (Wednesday), T (Thursday), F (Friday), S (Saturday). Each button measures approximately 44-48 pixels in diameter or width, ensuring they meet minimum touch target sizes for accessibility.
+
+Inactive days appear with a light gray background and darker gray text, while selected days feature the orange accent color (#FF5500) as their background with white text. Tapping a day toggles its selection state with a smooth scale animation and haptic feedback. Users can select any combination of days, from a single day for one-time events to all seven days for daily alarms. If no days are selected, the alarm defaults to a one-time trigger for the next occurrence of the selected time.
+
+## Sound & Vibration Settings
+
+### Ringtone Selection
+
+This section begins with a label "Alarm Sound" or "Ringtone", followed by a pressable row that displays the currently selected ringtone name (e.g., "Gentle Bells", "Classic Alarm", "Rising Sun"). Tapping this row opens a secondary modal or screen containing a list of available ringtones.
+
+The ringtone name is displayed in a medium-weight font with a right-facing chevron icon indicating that the row is interactive. Default ringtones are pre-loaded, and each can be previewed by tapping a play icon next to its name in the selection modal.
+
+### Volume Control
+
+A slider component allows users to adjust the alarm volume from 0% to 100%. The slider track uses a light gray background with an orange fill that extends from the left edge to the current thumb position. The thumb itself is a white circle with a subtle shadow, providing clear visual feedback of the current volume level. As users drag the slider, the volume percentage is displayed above the thumb or adjacent to the slider in real-time.
+
+### Gradual Volume Toggle
+
+Below the volume slider, a toggle switch is labeled "Gradual Volume" or "Fade In". When enabled, this option causes the alarm to start at a low volume and gradually increase to the selected volume over a period of 30-60 seconds. The toggle uses the standard iOS/Android switch component styled with the orange accent color when active. Descriptive text below the toggle explains: "Alarm starts quietly and gradually gets louder" to ensure users understand the feature.
+
+### Vibration Toggle
+
+Similarly, another toggle switch labeled "Vibrate" allows users to enable or disable vibration alongside the alarm sound. When enabled, the device will vibrate in a pattern synchronized with the alarm ringtone. This is particularly useful for users who prefer tactile alerts or need alarms in silent environments.
+
+## Snooze Configuration
+
+### Snooze Enabled Toggle
+
+This section starts with a label "Snooze Options" and features a primary toggle switch to enable or disable the snooze function entirely. When disabled, the alarm will not offer a snooze button when triggered, forcing immediate dismissal through the configured dismiss task.
+
+### Snooze Duration Picker
+
+If snooze is enabled, additional configuration options appear, including a snooze duration selector. This can be implemented as a dropdown menu, segmented control, or wheel picker displaying common intervals: 3, 5, 10, 15, or 20 minutes. The selected duration determines how long the alarm will remain silent before retriggering after a snooze action.
+
+### Snooze Limit Counter
+
+A numeric stepper or picker allows users to set the maximum number of times they can snooze the alarm before it must be dismissed. Options typically range from 1 to 10 snoozes, with a visual counter (e.g., "3 snoozes max") displaying the selected value. This prevents users from endlessly snoozing and helps enforce wake-up discipline.
+
+## Dismiss Task Configuration
+
+### Task Type Selector
+
+The dismiss task section is introduced with a bold label: "Dismissal Challenge" or "How to Dismiss Alarm". Below this, a dropdown menu or segmented control presents a list of available task types:
+
+- **None**: No challenge required; alarm can be dismissed with a single tap
+- **Math**: Solve mathematical problems
+- **Shake**: Shake the device vigorously
+- **Scan**: Scan a barcode or QR code
+- **Typing**: Type a specific phrase
+- **Walk**: Take a certain number of steps
+- **Breathing**: Complete breathing exercises
+- **Puzzle**: Solve a sliding puzzle
+- **QR**: Scan a specific QR code placed in another room
+- **Memory**: Complete a memory matching game
+
+Each option is displayed with an emoji icon and clear label, making the selection intuitive.
+
+### Task-Specific Configuration
+
+Depending on the selected dismiss task type, additional configuration options dynamically appear below the type selector:
+
+**Math Task Settings:**
+- Difficulty selector: Easy (single-digit addition), Medium (two-digit operations), Hard (multi-step problems), Extreme (complex calculations)
+- Problem count: Number of math problems to solve (1-10)
+
+**Shake Task Settings:**
+- Intensity selector: Light, Medium, Vigorous
+- Duration: How many seconds to shake (5-60 seconds)
+
+**Typing Task Settings:**
+- Mode selector: Custom phrase, Random phrase, Intent phrase ("I am awake and ready")
+- Custom text input field (if custom mode selected)
+- Word count (if random mode selected)
+
+**Walk Task Settings:**
+- Step count selector: Number of steps required (10-500 steps)
+
+**Scan/QR Task Settings:**
+- Mode: Any barcode or specific QR code
+- Button to scan and save reference QR code for later matching
+
+Each configuration option is presented with clear labels, intuitive input controls (sliders, steppers, text fields), and helpful hint text explaining the setting's purpose.
+
+## Action Buttons
+
+### Primary Action: Save/Create
+
+At the bottom of the creation screen, a large, prominent button labeled "Create Alarm" or "Save" spans nearly the full width of the screen. This button features the Neo-Brutalist style with a bold black border (4px), orange background (#FF5500), white text in an extra-bold font (18-20px, weight 800), and a pronounced shadow effect (8px offset). When pressed, the button provides haptic feedback and animates with a subtle scale-down effect before saving the alarm configuration and dismissing the modal.
+
+### Secondary Action: Cancel
+
+Adjacent to or above the primary button, a secondary "Cancel" button allows users to exit without saving. This button typically has a more subdued appearance—either a white/transparent background with a black border and black text, or simply styled as text without a filled background. Tapping cancel dismisses the modal and discards any configuration changes.
+
+## Visual Design & Animations
+
+Throughout the alarm creation interface, FocusGuard maintains its signature premium aesthetic. The background uses a clean white in light mode or a deep charcoal (#0f0f0f) in dark mode. All interactive elements feature the 4px black borders characteristic of Neo-Brutalism, with orange accents providing visual hierarchy and brand consistency.
+
+Micro-animations enhance the user experience: toggle switches flip with a spring animation, selected days scale up briefly when tapped, and the entire modal enters with a smooth slide-up transition. Input fields subtly pulse their border color when focused, and the save button displays a loading spinner if alarm scheduling takes a moment to process.
+
+## Accessibility Features
+
+The alarm creation screen is designed with accessibility in mind. All interactive elements meet minimum touch target sizes (44x44 points), color contrasts exceed WCAG AA standards, and descriptive labels are provided for screen readers. Form validation provides clear error messages if required fields (such as time selection) are incomplete, and haptic feedback assists users with visual impairments in understanding their interactions.
+
+This comprehensive alarm creation experience ensures users can configure alarms precisely to their needs, from simple daily wake-ups to complex challenges designed to combat morning grogginess and enforce productive wake habits.
