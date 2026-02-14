@@ -48,7 +48,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const MemoryHeader = () => (
     <View style={styles.headerContainer}>
         {/* Avatar Frame */}
-        <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+        <Pressable onPress={() => router.push('/account' as any)}>
             <View style={styles.avatarFrame}>
                 <Text style={styles.avatarText}>FG</Text>
             </View>

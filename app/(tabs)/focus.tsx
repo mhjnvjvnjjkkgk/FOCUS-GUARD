@@ -480,7 +480,7 @@ export default function FocusModeScreen() {
 
     const renderHeader = () => (
         <View style={styles.header}>
-            <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+            <Pressable onPress={() => router.push('/account' as any)}>
                 <View style={styles.avatarBox}>
                     <Text style={styles.avatarText}>FG</Text>
                 </View>

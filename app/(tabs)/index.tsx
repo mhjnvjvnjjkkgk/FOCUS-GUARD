@@ -250,7 +250,7 @@ export default function AlarmsScreen() {
       >
         {/* FOCUSGUARD LOGO */}
         <View style={styles.logoContainer}>
-          <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+          <Pressable onPress={() => router.push('/account' as any)}>
             <View style={styles.logoBox}>
               <Text style={styles.logoFG}>FG</Text>
             </View>

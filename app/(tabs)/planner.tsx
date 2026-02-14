@@ -86,7 +86,7 @@ const NeoHeader = ({ date, onPrev, onNext }: NeoHeaderProps) => {
         <View style={styles.neoHeader}>
             {/* Top Bar: Branding */}
             <View style={styles.neoTopBar}>
-                <Pressable onPress={() => useSettingsStore.getState().openSidebar()}>
+                <Pressable onPress={() => router.push('/account' as any)}>
                     <View style={styles.neoAvatarBox}>
                         <Text style={styles.neoAvatarText}>FG</Text>
                     </View>

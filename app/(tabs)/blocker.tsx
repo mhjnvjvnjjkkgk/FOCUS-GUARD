@@ -240,7 +240,7 @@ export default function BlockerScreen() {
                     style={styles.neoAvatarBox}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        useSettingsStore.getState().openSidebar();
+                        router.push('/account' as any);
                     }}
                 >
                     <Ionicons name="person" size={24} color={NEO_WHITE} />

@@ -859,7 +859,7 @@ export default function StatsScreen() {
                     entering={FadeInUp.delay(50).springify()}
                     style={styles.neoHeader}
                 >
-                    <Pressable onPress={() => settingsStore.openSidebar()}>
+                    <Pressable onPress={() => router.push('/account' as any)}>
                         <View style={[styles.neoAvatarBox, { overflow: 'hidden' }]}>
                             {user?.photoURL ? (
                                 <Image source={{ uri: user.photoURL }} style={{ width: '100%', height: '100%' }} />

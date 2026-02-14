@@ -123,6 +123,7 @@ export default function RootLayout() {
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="alarm/ringing" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
           <Stack.Screen name="shop" options={{ headerShown: false, presentation: 'modal' }} />
+          <Stack.Screen name="account" options={{ headerShown: false, presentation: 'modal' }} />
         </Stack>
         <StatusBar hidden={true} />
         <RankUpModal />
