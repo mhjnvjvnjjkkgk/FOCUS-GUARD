@@ -40,6 +40,8 @@ import * as Google from 'expo-auth-session/providers/google';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '@/configs/firebaseConfig';
 import { Image } from 'expo-image';
+import RankBadge from '@/components/RankBadge';
+import { getNextRank, getStreakBadge } from '@/data/ranks';
 
 const { width } = Dimensions.get('window');
 
@@ -879,6 +881,41 @@ export default function StatsScreen() {
                             </Pressable>
                         </View>
                     </View>
+                </Animated.View>
+
+                {/* Rank & XP Progress */}
+                <Animated.View
+                    entering={FadeInUp.delay(75).springify()}
+                    style={rankStyles.rankCard}
+                >
+                    <View style={rankStyles.rankRow}>
+                        <RankBadge size="medium" showStreak />
+                        <Text style={rankStyles.xpTotal}>
+                            {pointsStore.totalPointsEarned.toLocaleString()} XP
+                        </Text>
+                    </View>
+                    {(() => {
+                        const nextInfo = getNextRank(pointsStore.totalPointsEarned);
+                        if (!nextInfo) return (
+                            <Text style={rankStyles.maxRankText}>⚡ MAX RANK ACHIEVED</Text>
+                        );
+                        return (
+                            <>
+                                <View style={rankStyles.progressBarBg}>
+                                    <View style={[
+                                        rankStyles.progressBarFill,
+                                        {
+                                            width: `${Math.max(nextInfo.progress * 100, 2)}%`,
+                                            backgroundColor: pointsStore.getCurrentRank().color,
+                                        }
+                                    ]} />
+                                </View>
+                                <Text style={rankStyles.nextRankLabel}>
+                                    {nextInfo.rank.badge} {nextInfo.rank.title} — {nextInfo.xpNeeded.toLocaleString()} XP to go
+                                </Text>
+                            </>
+                        );
+                    })()}
                 </Animated.View>
 
                 {/* Period Selector */}
@@ -1914,5 +1951,58 @@ const styles: any = StyleSheet.create({
         fontWeight: NEO.fonts.heavy,
         color: NEO.colors.black,
         letterSpacing: 1,
+    },
+});
+
+const rankStyles = StyleSheet.create({
+    rankCard: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: NEO.border,
+        borderColor: NEO.colors.black,
+        padding: 14,
+        marginBottom: 16,
+        shadowColor: NEO.colors.black,
+        shadowOffset: { width: NEO.shadowOffset, height: NEO.shadowOffset },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 0,
+    },
+    rankRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    xpTotal: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#000',
+        letterSpacing: 1,
+        fontFamily: 'monospace',
+    },
+    progressBarBg: {
+        height: 10,
+        backgroundColor: '#E0E0E0',
+        borderWidth: 2,
+        borderColor: '#000',
+        marginBottom: 6,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+    },
+    nextRankLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#666',
+        textAlign: 'center',
+    },
+    maxRankText: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#FFD700',
+        textAlign: 'center',
+        letterSpacing: 2,
+        marginTop: 4,
     },
 });

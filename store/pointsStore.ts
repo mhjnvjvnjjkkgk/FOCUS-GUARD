@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '@/configs/firebaseConfig';
 import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 import { ALL_ACHIEVEMENTS } from '@/data/achievements';
+import { getRankForXP, getNextRank, Rank } from '@/data/ranks';
 
 // Points configuration - MATCHES MASTER PROMPT SPEC
 export const POINTS_CONFIG = {
@@ -153,6 +154,10 @@ interface PointsState {
     // Daily goal
     dailyGoal: number;
 
+    // Rank system
+    currentLevel: number;
+    pendingRankUp: Rank | null;  // Set when user levels up — UI reads this to show modal
+
     // Actions - Points
     addPoints: (date: string, category: keyof PointsEarned, amount: number) => Promise<void>;
     deductPoints: (date: string, category: keyof PointsDeducted, amount: number) => Promise<void>;
@@ -193,6 +198,12 @@ interface PointsState {
     // Cloud Sync
     syncWithFirestore: () => void;
     stopSync: () => void;
+
+    // Rank
+    checkRankUp: () => void;
+    dismissRankUp: () => void;
+    getCurrentRank: () => Rank;
+    getNextRankInfo: () => { rank: Rank; xpNeeded: number; progress: number } | null;
 }
 
 // Achievements are imported from data/achievements.ts
@@ -253,7 +264,9 @@ export const usePointsStore = create<PointsState>()(
             totalTasksCompleted: 0,
             totalSessionsCompleted: 0,
             achievements: ALL_ACHIEVEMENTS,
-            dailyGoal: 200, // Default 200 per master prompt (adjustable 100-500)
+            dailyGoal: 200,
+            currentLevel: 1,
+            pendingRankUp: null,
 
             addPoints: async (date, category, amount) => {
                 set((state) => {
@@ -303,6 +316,9 @@ export const usePointsStore = create<PointsState>()(
                         console.error('Firestore Sync Error:', e);
                     }
                 }
+
+                // Check for rank-up after earning points
+                get().checkRankUp();
             },
 
             deductPoints: async (date, category, amount) => {
@@ -818,6 +834,30 @@ export const usePointsStore = create<PointsState>()(
                 });
 
                 return best;
+            },
+
+            // === RANK SYSTEM ===
+            checkRankUp: () => {
+                const state = get();
+                const newRank = getRankForXP(state.totalPointsEarned);
+                if (newRank.level > state.currentLevel) {
+                    set({
+                        currentLevel: newRank.level,
+                        pendingRankUp: newRank,
+                    });
+                }
+            },
+
+            dismissRankUp: () => {
+                set({ pendingRankUp: null });
+            },
+
+            getCurrentRank: () => {
+                return getRankForXP(get().totalPointsEarned);
+            },
+
+            getNextRankInfo: () => {
+                return getNextRank(get().totalPointsEarned);
             },
         }),
         {

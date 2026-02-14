@@ -14,6 +14,7 @@ import { usePointsStore } from '@/store/pointsStore';
 import { usePlannerStore } from '@/store/plannerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import AlarmService from '@/services/AlarmService';
+import RankUpModal from '@/components/RankUpModal';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -120,6 +121,7 @@ export default function RootLayout() {
           <Stack.Screen name="alarm/ringing" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
         </Stack>
         <StatusBar hidden={true} />
+        <RankUpModal />
       </ThemeProvider>
     </GestureHandlerRootView>
   );
