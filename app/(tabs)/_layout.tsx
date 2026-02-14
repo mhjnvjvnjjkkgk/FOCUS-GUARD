@@ -62,39 +62,28 @@ function NeoTabIcon({ name, focused, color, label }: any) {
 // CUSTOM TAB BAR
 // ============================================
 function CustomTabBar({ state, descriptors, navigation }: any) {
-  // Routes: index (Alarms), reminders, planner, focus, blocker, stats
+  // 5 VISIBLE TABS: index (Schedule), focus, battle, social, hub
+  // Hidden tabs (reminders, blocker, stats, planner) are accessible via Hub or programmatic nav
 
-  // Mapped indices based on route names
-  // 0: index (Alarms)
-  // 1: reminders
-  // 2: planner
-  // 3: focus
-  // 4: blocker
-  // 5: stats
+  const VISIBLE_TABS = ['index', 'focus', 'battle', 'social', 'hub'];
 
-  // TARGET ORDER: 
-  // 1. Alarm (index)
-  // 2. Reminders
-  // 3. Focus
-  // 4. Blocker
-  // 5. Stats
-  // 6. Planner
-
-  // CHECK ACTIVE ROUTE OPTIONS FOR VISIBILITY
   const focusedRoute = state.routes[state.index];
   const focusedDescriptor = descriptors[focusedRoute.key];
   const focusedOptions = focusedDescriptor.options;
 
-  // @ts-ignore - tabBarStyle might be generic style object
+  // @ts-ignore
   if (focusedOptions.tabBarStyle?.display === 'none') {
     return null;
   }
 
-  const visualOrder = [0, 1, 3, 4, 5, 2];
+  // Build visual order from state routes
+  const visibleRouteIndices = VISIBLE_TABS.map(name =>
+    state.routes.findIndex((r: any) => r.name === name)
+  ).filter((i: number) => i >= 0);
 
   return (
     <View style={styles.tabBarContainer}>
-      {visualOrder.map((routeIndex) => {
+      {visibleRouteIndices.map((routeIndex: number) => {
         const route = state.routes[routeIndex];
         if (!route) return null;
 
@@ -117,30 +106,27 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         // Icons and Labels
         let iconName: keyof typeof Ionicons.glyphMap = 'help-outline';
         let label = '';
+        let activeBg = '#000000';
 
         if (route.name === 'index') {
-          iconName = isFocused ? 'alarm' : 'alarm-outline';
-          label = 'ALARM';
-        } else if (route.name === 'reminders') {
-          iconName = isFocused ? 'notifications' : 'notifications-outline';
-          label = 'REMINDERS';
-        } else if (route.name === 'planner') {
           iconName = isFocused ? 'calendar' : 'calendar-outline';
-          label = 'PLANNER';
+          label = 'SCHEDULE';
         } else if (route.name === 'focus') {
           iconName = isFocused ? 'radio-button-on' : 'radio-button-off';
           label = 'FOCUS';
-        } else if (route.name === 'blocker') {
-          iconName = isFocused ? 'ban' : 'ban-outline';
-          label = 'BLOCK';
-        } else if (route.name === 'stats') {
-          iconName = isFocused ? 'bar-chart' : 'bar-chart-outline';
-          label = 'STATS';
+        } else if (route.name === 'battle') {
+          iconName = isFocused ? 'flash' : 'flash-outline';
+          label = 'BATTLE';
+          activeBg = '#FF4444';
+        } else if (route.name === 'social') {
+          iconName = isFocused ? 'people' : 'people-outline';
+          label = 'SOCIAL';
+          activeBg = '#4A9EFF';
+        } else if (route.name === 'hub') {
+          iconName = isFocused ? 'grid' : 'grid-outline';
+          label = 'HUB';
+          activeBg = '#FF6B35';
         }
-
-        // Active Background Color - REMINDERS gets magenta (#FF00FF)
-        let activeBg = '#000000'; // Default black for most tabs
-        if (route.name === 'reminders') activeBg = '#FF00FF'; // Magenta for Reminders
 
         return (
           <Pressable
@@ -182,14 +168,13 @@ export default function TabLayout() {
   // SMOOTH SWIPE NAVIGATION (like home screen)
   // ============================================
   const segments = useSegments();
-  const TAB_ORDER = ['index', 'reminders', 'focus', 'blocker', 'stats', 'planner'];
+  const TAB_ORDER = ['index', 'focus', 'battle', 'social', 'hub'];
   const TAB_ROUTES: Record<string, string> = {
     'index': '/',
-    'reminders': '/reminders',
     'focus': '/focus',
-    'blocker': '/blocker',
-    'stats': '/stats',
-    'planner': '/planner',
+    'battle': '/battle',
+    'social': '/social',
+    'hub': '/hub',
   };
 
   const swipeCooldown = useRef(false);
@@ -256,12 +241,16 @@ export default function TabLayout() {
               headerShown: false,
             }}
           >
-            <Tabs.Screen name="index" options={{ title: 'Alarms' }} />
-            <Tabs.Screen name="reminders" options={{ title: 'Reminders' }} />
+            <Tabs.Screen name="index" options={{ title: 'Schedule' }} />
             <Tabs.Screen name="focus" options={{ title: 'Focus' }} />
-            <Tabs.Screen name="blocker" options={{ title: 'Blocker' }} />
-            <Tabs.Screen name="stats" options={{ title: 'Stats' }} />
-            <Tabs.Screen name="planner" options={{ title: 'Planner' }} />
+            <Tabs.Screen name="battle" options={{ title: 'Battle' }} />
+            <Tabs.Screen name="social" options={{ title: 'Social' }} />
+            <Tabs.Screen name="hub" options={{ title: 'Hub' }} />
+            {/* Hidden tabs — accessible via Hub cards or programmatic nav */}
+            <Tabs.Screen name="reminders" options={{ title: 'Reminders', href: null }} />
+            <Tabs.Screen name="blocker" options={{ title: 'Blocker', href: null }} />
+            <Tabs.Screen name="stats" options={{ title: 'Stats', href: null }} />
+            <Tabs.Screen name="planner" options={{ title: 'Planner', href: null }} />
           </Tabs>
         </Animated.View>
       </GestureDetector>
@@ -285,7 +274,7 @@ const styles = StyleSheet.create({
     paddingBottom: BOTTOM_INSET,
   },
   tabItem: {
-    flex: 1, // Equal width for 6 items
+    flex: 1, // Equal width for 5 items
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: NEO.colors.white,
