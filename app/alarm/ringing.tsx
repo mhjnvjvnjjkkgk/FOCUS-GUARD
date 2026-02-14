@@ -429,7 +429,128 @@ const PaperTape = ({ color = '#3498db', style }: { color?: string, style?: any }
     </View>
 );
 
-// Main Alarm Ringing Screen
+// Memory Task Component
+interface MemoryTaskProps {
+    pairs: number; // Number of tiles to memorize
+    onComplete: () => void;
+}
+
+function MemoryTask({ pairs, onComplete }: MemoryTaskProps) {
+    const gridSize = 3;
+    const totalTiles = gridSize * gridSize;
+    const [pattern, setPattern] = useState<number[]>([]);
+    const [userPattern, setUserPattern] = useState<number[]>([]);
+    const [gameState, setGameState] = useState<'showing' | 'playing' | 'success' | 'fail'>('showing');
+    const [round, setRound] = useState(1);
+    const targetRounds = 3; // Must complete 3 rounds to verify wakefulness
+
+    // Generate random pattern
+    const generatePattern = useCallback(() => {
+        const newPattern: number[] = [];
+        while (newPattern.length < pairs) {
+            const tile = Math.floor(Math.random() * totalTiles);
+            if (!newPattern.includes(tile)) {
+                newPattern.push(tile);
+            }
+        }
+        setPattern(newPattern);
+        setGameState('showing');
+        setUserPattern([]);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+        // Hide after 2 seconds
+        setTimeout(() => {
+            setGameState('playing');
+        }, 2000);
+    }, [pairs, totalTiles]);
+
+    useEffect(() => {
+        generatePattern();
+    }, [round]);
+
+    const handleTilePress = (index: number) => {
+        if (gameState !== 'playing') return;
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // Check if correct tile
+        if (!pattern.includes(index)) {
+            // Wrong tile
+            setGameState('fail');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            setTimeout(() => {
+                // Restart current round
+                generatePattern();
+            }, 1000);
+            return;
+        }
+
+        // Already selected?
+        if (userPattern.includes(index)) return;
+
+        const newUserPattern = [...userPattern, index];
+        setUserPattern(newUserPattern);
+
+        // Check if pattern complete
+        if (newUserPattern.length === pattern.length) {
+            // Success
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            if (round >= targetRounds) {
+                setGameState('success');
+                setTimeout(onComplete, 500);
+            } else {
+                setRound(r => r + 1);
+            }
+        }
+    };
+
+    return (
+        <View style={styles.taskContainer}>
+            <Text style={styles.taskTitle}>🧠 Memory Match</Text>
+            <Text style={styles.taskSubtitle}>
+                Round {round} of {targetRounds} • Memorize the pattern
+            </Text>
+
+            <View style={{
+                width: 300,
+                height: 300,
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 10
+            }}>
+                {Array.from({ length: totalTiles }).map((_, index) => {
+                    const isActive = gameState === 'showing' && pattern.includes(index);
+                    const isSelected = userPattern.includes(index);
+                    const isWrong = gameState === 'fail' && !pattern.includes(index) && userPattern.includes(index); // Visual feedback not perfectly implemented for wrong tile specific, but 'fail' state handles reset.
+
+                    return (
+                        <Pressable
+                            key={index}
+                            style={{
+                                width: '30%',
+                                height: '30%',
+                                backgroundColor: isActive || isSelected ? Colors.accent.purple :
+                                    gameState === 'fail' ? Colors.accent.red : Colors.gray[700],
+                                borderRadius: 12,
+                                opacity: (gameState === 'showing' && !isActive) ? 0.3 : 1
+                            }}
+                            onPress={() => handleTilePress(index)}
+                        />
+                    );
+                })}
+            </View>
+
+            <Text style={[styles.timerText, { marginTop: 20 }]}>
+                {gameState === 'showing' ? 'Memorize...' : gameState === 'playing' ? 'Repeat the pattern!' : gameState === 'fail' ? 'Wrong! Try again' : 'Good!'}
+            </Text>
+        </View>
+    );
+}
+
+// ... imports ...
+
 export default function AlarmRingingScreen() {
     const params = useLocalSearchParams<{ id: string }>();
     const alarm = useAlarmStore(state => state.getAlarm(params.id || ''));
@@ -439,12 +560,11 @@ export default function AlarmRingingScreen() {
     const [showTask, setShowTask] = useState(false);
     const [snoozesUsed, setSnoozesUsed] = useState(0);
 
-    // Animations
+    // ... animations ...
     const pulseScale = useSharedValue(1);
     const glowOpacity = useSharedValue(0.5);
 
     useEffect(() => {
-        // Pulse animation for Time
         pulseScale.value = withRepeat(
             withSequence(
                 withTiming(1.05, { duration: 800, easing: Easing.inOut(Easing.ease) }),
@@ -453,8 +573,6 @@ export default function AlarmRingingScreen() {
             -1,
             true
         );
-
-        // Glow Animation
         glowOpacity.value = withRepeat(
             withSequence(
                 withTiming(1, { duration: 1000 }),
@@ -463,35 +581,24 @@ export default function AlarmRingingScreen() {
             -1,
             true
         );
-
-        // Vibration pattern
         const vibrationPattern = [0, 500, 200, 500];
         Vibration.vibrate(vibrationPattern, true);
-
-        return () => {
-            Vibration.cancel();
-        };
+        return () => { Vibration.cancel(); };
     }, []);
 
-    const pulseStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: pulseScale.value }],
-    }));
-
+    const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulseScale.value }] }));
     const glowStyle = useAnimatedStyle(() => ({
         textShadowRadius: interpolate(glowOpacity.value, [0.4, 1], [10, 30]),
         opacity: interpolate(glowOpacity.value, [0.4, 1], [0.8, 1])
     }));
 
-    // Helper interpolate function since not imported
     function interpolate(value: number, input: number[], output: number[]) {
         'worklet';
-        // Simple linear interpolation
         const range = input[1] - input[0];
         const outRange = output[1] - output[0];
         const ratio = (value - input[0]) / range;
         return output[0] + ratio * outRange;
     }
-
 
     const handleSnooze = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -511,19 +618,45 @@ export default function AlarmRingingScreen() {
         }
     };
 
+    // Calculate Difficulty Bonus
+    const getDifficultyMultiplier = () => {
+        if (!alarm?.dismissTask) return 1;
+        const task = alarm.dismissTask;
+
+        switch (task.type) {
+            case 'math':
+                if (task.mathDifficulty === 'extreme') return 5;
+                if (task.mathDifficulty === 'hard') return 3;
+                if (task.mathDifficulty === 'medium') return 2;
+                return 1;
+            case 'shake':
+                if (task.shakeIntensity === 'vigorous') return 3;
+                if (task.shakeIntensity === 'medium') return 2;
+                return 1;
+            case 'memory':
+                const pairs = task.memoryPairs || 3;
+                if (pairs >= 6) return 5;
+                if (pairs >= 5) return 3;
+                if (pairs >= 4) return 2;
+                return 1;
+            default: return 1;
+        }
+    };
+
     const completeDismiss = () => {
         Vibration.cancel();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         if (snoozesUsed === 0) {
-            pointsStore.recordAlarmTriggered(today, false);
+            const multiplier = getDifficultyMultiplier();
+            pointsStore.recordAlarmTriggered(today, false, multiplier);
         } else {
             pointsStore.recordWakeUpWithSnooze(today);
         }
         router.back();
     };
 
-    // Format Data
+    // ... Format Data ...
     const now = new Date();
     const currentTime = `${now.getHours() % 12 || 12}:${now.getMinutes().toString().padStart(2, '0')}`;
     const period = now.getHours() >= 12 ? 'PM' : 'AM';
@@ -538,7 +671,8 @@ export default function AlarmRingingScreen() {
             case 'shake': return <ShakeTask intensity={alarm.dismissTask.shakeIntensity || 'medium'} duration={alarm.dismissTask.shakeDuration || 15} onComplete={completeDismiss} />;
             case 'breathing': return <BreathingTask cycles={alarm.dismissTask.breathingCycles || 3} inhale={alarm.dismissTask.breathingInhale || 4} hold={alarm.dismissTask.breathingHold || 4} exhale={alarm.dismissTask.breathingExhale || 4} onComplete={completeDismiss} />;
             case 'typing': return <TypingTask text={alarm.dismissTask.typingText || 'I am awake'} onComplete={completeDismiss} />;
-            default: return null;
+            case 'memory': return <MemoryTask pairs={alarm.dismissTask.memoryPairs || 4} onComplete={completeDismiss} />;
+            default: return <Pressable onPress={completeDismiss}><Text style={{ color: '#FFF' }}>Unknown Task - Tap to Dismiss</Text></Pressable>;
         }
     };
 

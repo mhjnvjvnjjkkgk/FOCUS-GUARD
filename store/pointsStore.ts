@@ -158,7 +158,7 @@ interface PointsState {
     deductPoints: (date: string, category: keyof PointsDeducted, amount: number) => Promise<void>;
 
     // Actions - Metrics
-    recordAlarmTriggered: (date: string, snoozed: boolean) => void;
+    recordAlarmTriggered: (date: string, snoozed: boolean, bonusMultiplier?: number) => void;
     recordWakeUpWithSnooze: (date: string) => void;
     recordTaskStarted: (date: string, onTime: boolean) => void;
     recordTaskCompleted: (date: string) => void;
@@ -353,17 +353,21 @@ export const usePointsStore = create<PointsState>()(
                 }
             },
 
-            recordAlarmTriggered: (date, snoozed) => {
+            recordAlarmTriggered: (date, snoozed, bonusMultiplier = 1) => {
                 set((state) => {
                     const dailyPoints = state.history[date] || createEmptyDailyPoints(date, state.dailyGoal);
 
                     // Create history record for the alarm event
-                    const points = snoozed ? -10 : POINTS_CONFIG.alarm.wakeNoSnooze;
+                    // Base points * multiplier
+                    const basePoints = POINTS_CONFIG.alarm.wakeNoSnooze;
+                    const earnedPoints = Math.round(basePoints * bonusMultiplier);
+                    const points = snoozed ? -10 : earnedPoints;
+
                     const alarmRecord: SessionRecord = {
                         id: `alarm-${Date.now()}`,
                         date,
                         timestamp: Date.now(),
-                        taskName: snoozed ? 'Alarm Snoozed 💤' : 'Wake Up Goal ☀️',
+                        taskName: snoozed ? 'Alarm Snoozed 💤' : `Wake Up Goal ☀️ (${bonusMultiplier}x Bonus)`,
                         plannedDuration: 0,
                         actualDuration: 0,
                         completionRate: snoozed ? 0 : 100,
@@ -390,7 +394,9 @@ export const usePointsStore = create<PointsState>()(
                 if (snoozed) {
                     get().deductPoints(date, 'snoozes', 10);
                 } else {
-                    get().addPoints(date, 'alarms', POINTS_CONFIG.alarm.wakeNoSnooze);
+                    const basePoints = POINTS_CONFIG.alarm.wakeNoSnooze;
+                    const earnedPoints = Math.round(basePoints * bonusMultiplier);
+                    get().addPoints(date, 'alarms', earnedPoints);
                 }
             },
 
