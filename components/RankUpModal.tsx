@@ -120,6 +120,11 @@ export default function RankUpModal() {
                         <Text style={styles.levelNumber}>
                             Level {pendingRankUp.level}
                         </Text>
+                        {pendingRankUp.description ? (
+                            <Text style={styles.rankDescription}>
+                                "{pendingRankUp.description}"
+                            </Text>
+                        ) : null}
                     </Animated.View>
 
                     {/* XP Info */}
@@ -206,6 +211,15 @@ const styles = StyleSheet.create({
         color: '#999',
         textAlign: 'center',
         marginTop: 4,
+    },
+    rankDescription: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#777',
+        textAlign: 'center',
+        fontStyle: 'italic',
+        marginTop: 8,
+        paddingHorizontal: 20,
     },
     xpInfo: {
         alignItems: 'center',

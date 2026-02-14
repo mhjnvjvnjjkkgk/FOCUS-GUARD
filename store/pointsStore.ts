@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '@/configs/firebaseConfig';
 import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 import { ALL_ACHIEVEMENTS } from '@/data/achievements';
-import { getRankForXP, getNextRank, Rank } from '@/data/ranks';
+import { getRankForXP, getRankForStats, getNextRank, getNextRankProgress, Rank } from '@/data/ranks';
 
 // Points configuration - MATCHES MASTER PROMPT SPEC
 export const POINTS_CONFIG = {
@@ -836,10 +836,24 @@ export const usePointsStore = create<PointsState>()(
                 return best;
             },
 
-            // === RANK SYSTEM ===
+            // === RANK SYSTEM (10-Rank Milestone System) ===
+            _getRankStats: () => {
+                const state = get();
+                return {
+                    xp: state.totalPointsEarned,
+                    focusMinutes: state.totalFocusMinutes,
+                    sessionsCompleted: state.totalSessionsCompleted,
+                    tasksCompleted: state.totalTasksCompleted,
+                    streakDays: state.longestStreak,
+                    achievementsUnlocked: state.achievements.filter(a => a.unlockedAt).length,
+                    battlesWon: 0, // Future: from battleStore
+                };
+            },
+
             checkRankUp: () => {
                 const state = get();
-                const newRank = getRankForXP(state.totalPointsEarned);
+                const stats = (state as any)._getRankStats();
+                const newRank = getRankForStats(stats);
                 if (newRank.level > state.currentLevel) {
                     set({
                         currentLevel: newRank.level,
@@ -853,7 +867,8 @@ export const usePointsStore = create<PointsState>()(
             },
 
             getCurrentRank: () => {
-                return getRankForXP(get().totalPointsEarned);
+                const stats = (get() as any)._getRankStats();
+                return getRankForStats(stats);
             },
 
             getNextRankInfo: () => {

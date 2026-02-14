@@ -1,16 +1,27 @@
 /**
- * Ranks & Levels System
- * XP thresholds, rank definitions, streak badges, and helper functions
+ * Ranks & Levels System — 10 Ranks with Milestone-Based Unlock Goals
+ * Each rank requires BOTH XP threshold AND specific achievement milestones.
  */
+
+export interface RankRequirement {
+    xpRequired: number;
+    focusMinutes?: number;        // Total focus time in minutes
+    sessionsCompleted?: number;   // Total completed focus sessions
+    tasksCompleted?: number;      // Total completed tasks
+    streakDays?: number;          // Longest streak (days)
+    achievementsUnlocked?: number;// Total achievements unlocked
+    battlesWon?: number;          // Focus battles won (future)
+}
 
 export interface Rank {
     level: number;
     title: string;
     badge: string;
-    xpRequired: number;
-    color: string;        // Primary color for rank
+    requirements: RankRequirement;
+    color: string;
     gradientStart: string;
     gradientEnd: string;
+    description: string;          // Flavor text for the rank
 }
 
 export interface StreakBadge {
@@ -22,29 +33,151 @@ export interface StreakBadge {
 }
 
 // ============================================
-// 20 RANKS — XP = totalPointsEarned
+// 10 RANKS — Each requires XP + milestones
 // ============================================
 export const RANKS: Rank[] = [
-    { level: 1, title: 'Sleepy Starter', badge: '😴', xpRequired: 0, color: '#9E9E9E', gradientStart: '#BDBDBD', gradientEnd: '#757575' },
-    { level: 2, title: 'Drowsy Doer', badge: '🥱', xpRequired: 100, color: '#8D6E63', gradientStart: '#A1887F', gradientEnd: '#6D4C41' },
-    { level: 3, title: 'Alarm Apprentice', badge: '⏰', xpRequired: 300, color: '#FF8A65', gradientStart: '#FFAB91', gradientEnd: '#E64A19' },
-    { level: 4, title: 'Focus Rookie', badge: '🔰', xpRequired: 600, color: '#66BB6A', gradientStart: '#81C784', gradientEnd: '#388E3C' },
-    { level: 5, title: 'Task Tackler', badge: '📋', xpRequired: 1000, color: '#42A5F5', gradientStart: '#64B5F6', gradientEnd: '#1E88E5' },
-    { level: 6, title: 'Habit Builder', badge: '🧱', xpRequired: 1500, color: '#AB47BC', gradientStart: '#CE93D8', gradientEnd: '#7B1FA2' },
-    { level: 7, title: 'Rhythm Keeper', badge: '🎵', xpRequired: 2500, color: '#26C6DA', gradientStart: '#4DD0E1', gradientEnd: '#00838F' },
-    { level: 8, title: 'Deep Worker', badge: '🔬', xpRequired: 4000, color: '#5C6BC0', gradientStart: '#7986CB', gradientEnd: '#303F9F' },
-    { level: 9, title: 'Flow Finder', badge: '🌊', xpRequired: 6000, color: '#29B6F6', gradientStart: '#4FC3F7', gradientEnd: '#0277BD' },
-    { level: 10, title: 'Discipline Knight', badge: '⚔️', xpRequired: 8500, color: '#EF5350', gradientStart: '#EF9A9A', gradientEnd: '#C62828' },
-    { level: 11, title: 'Streak Warrior', badge: '🔥', xpRequired: 12000, color: '#FF7043', gradientStart: '#FF8A65', gradientEnd: '#D84315' },
-    { level: 12, title: 'Productivity Pro', badge: '💼', xpRequired: 16000, color: '#78909C', gradientStart: '#90A4AE', gradientEnd: '#37474F' },
-    { level: 13, title: 'Time Lord', badge: '⏳', xpRequired: 21000, color: '#FFA726', gradientStart: '#FFB74D', gradientEnd: '#EF6C00' },
-    { level: 14, title: 'Zen Master', badge: '🧘', xpRequired: 27000, color: '#9CCC65', gradientStart: '#AED581', gradientEnd: '#558B2F' },
-    { level: 15, title: 'Focus Overlord', badge: '👁️', xpRequired: 35000, color: '#EC407A', gradientStart: '#F48FB1', gradientEnd: '#AD1457' },
-    { level: 16, title: 'Golden Guardian', badge: '🛡️', xpRequired: 45000, color: '#FFD54F', gradientStart: '#FFE082', gradientEnd: '#F9A825' },
-    { level: 17, title: 'Diamond Mind', badge: '💎', xpRequired: 60000, color: '#4DD0E1', gradientStart: '#80DEEA', gradientEnd: '#00838F' },
-    { level: 18, title: 'Legendary Focuser', badge: '🏆', xpRequired: 80000, color: '#FFB300', gradientStart: '#FFCA28', gradientEnd: '#FF8F00' },
-    { level: 19, title: 'Mythic Achiever', badge: '🌟', xpRequired: 100000, color: '#E040FB', gradientStart: '#EA80FC', gradientEnd: '#AA00FF' },
-    { level: 20, title: 'FocusGuard God', badge: '⚡', xpRequired: 150000, color: '#FF1744', gradientStart: '#FF5252', gradientEnd: '#D50000' },
+    {
+        level: 1,
+        title: 'Rookie',
+        badge: '🐣',
+        requirements: { xpRequired: 0 },
+        color: '#9E9E9E',
+        gradientStart: '#BDBDBD',
+        gradientEnd: '#757575',
+        description: 'Every legend starts somewhere. Welcome to FocusGuard.',
+    },
+    {
+        level: 2,
+        title: 'Apprentice',
+        badge: '🔰',
+        requirements: {
+            xpRequired: 500,
+            sessionsCompleted: 5,
+        },
+        color: '#8D6E63',
+        gradientStart: '#A1887F',
+        gradientEnd: '#6D4C41',
+        description: 'You\'ve proven you can show up. Now prove you can stay.',
+    },
+    {
+        level: 3,
+        title: 'Grinder',
+        badge: '⚒️',
+        requirements: {
+            xpRequired: 2000,
+            sessionsCompleted: 20,
+            streakDays: 3,
+            tasksCompleted: 5,
+        },
+        color: '#FF8A65',
+        gradientStart: '#FFAB91',
+        gradientEnd: '#E64A19',
+        description: 'Consistency is your weapon. The grind never stops.',
+    },
+    {
+        level: 4,
+        title: 'Warrior',
+        badge: '⚔️',
+        requirements: {
+            xpRequired: 5000,
+            focusMinutes: 60,
+            streakDays: 7,
+        },
+        color: '#42A5F5',
+        gradientStart: '#64B5F6',
+        gradientEnd: '#1E88E5',
+        description: 'Discipline is choosing between what you want now and what you want most.',
+    },
+    {
+        level: 5,
+        title: 'Veteran',
+        badge: '🛡️',
+        requirements: {
+            xpRequired: 10000,
+            focusMinutes: 300,
+            achievementsUnlocked: 10,
+            tasksCompleted: 25,
+        },
+        color: '#66BB6A',
+        gradientStart: '#81C784',
+        gradientEnd: '#388E3C',
+        description: 'Battle-tested and unbreakable. You\'ve seen it all.',
+    },
+    {
+        level: 6,
+        title: 'Elite',
+        badge: '💎',
+        requirements: {
+            xpRequired: 20000,
+            focusMinutes: 900,
+            streakDays: 14,
+            tasksCompleted: 50,
+        },
+        color: '#AB47BC',
+        gradientStart: '#CE93D8',
+        gradientEnd: '#7B1FA2',
+        description: 'Top 1%. Your focus cuts through everything.',
+    },
+    {
+        level: 7,
+        title: 'Master',
+        badge: '🔥',
+        requirements: {
+            xpRequired: 40000,
+            focusMinutes: 2400,
+            achievementsUnlocked: 30,
+            tasksCompleted: 100,
+        },
+        color: '#EF5350',
+        gradientStart: '#EF9A9A',
+        gradientEnd: '#C62828',
+        description: 'Others dream about it. You do it. Every. Single. Day.',
+    },
+    {
+        level: 8,
+        title: 'Champion',
+        badge: '👑',
+        requirements: {
+            xpRequired: 70000,
+            focusMinutes: 4800,
+            streakDays: 30,
+            tasksCompleted: 200,
+        },
+        color: '#FFB300',
+        gradientStart: '#FFCA28',
+        gradientEnd: '#FF8F00',
+        description: 'Crowned by performance, not promises. Long live the king.',
+    },
+    {
+        level: 9,
+        title: 'Legend',
+        badge: '⭐',
+        requirements: {
+            xpRequired: 120000,
+            focusMinutes: 9000,
+            achievementsUnlocked: 60,
+            tasksCompleted: 500,
+        },
+        color: '#E040FB',
+        gradientStart: '#EA80FC',
+        gradientEnd: '#AA00FF',
+        description: 'Your name echoes through the halls. Legends never die.',
+    },
+    {
+        level: 10,
+        title: 'FocusGuard God',
+        badge: '⚡',
+        requirements: {
+            xpRequired: 200000,
+            focusMinutes: 18000,
+            achievementsUnlocked: 90,
+            streakDays: 100,
+        },
+        color: '#FF1744',
+        gradientStart: '#FF5252',
+        gradientEnd: '#D50000',
+        description: 'Mortal focus was never enough. You transcended.',
+    },
 ];
 
 // ============================================
@@ -63,12 +196,46 @@ export const STREAK_BADGES: StreakBadge[] = [
 // ============================================
 
 /**
- * Get the current rank for given XP
+ * Check if all rank requirements are met
  */
-export function getRankForXP(xp: number): Rank {
+export function meetsRankRequirements(
+    rank: Rank,
+    stats: {
+        xp: number;
+        focusMinutes: number;
+        sessionsCompleted: number;
+        tasksCompleted: number;
+        streakDays: number;
+        achievementsUnlocked: number;
+        battlesWon: number;
+    }
+): boolean {
+    const req = rank.requirements;
+    if (stats.xp < req.xpRequired) return false;
+    if (req.focusMinutes && stats.focusMinutes < req.focusMinutes) return false;
+    if (req.sessionsCompleted && stats.sessionsCompleted < req.sessionsCompleted) return false;
+    if (req.tasksCompleted && stats.tasksCompleted < req.tasksCompleted) return false;
+    if (req.streakDays && stats.streakDays < req.streakDays) return false;
+    if (req.achievementsUnlocked && stats.achievementsUnlocked < req.achievementsUnlocked) return false;
+    if (req.battlesWon && stats.battlesWon < req.battlesWon) return false;
+    return true;
+}
+
+/**
+ * Get the current rank for given stats
+ */
+export function getRankForStats(stats: {
+    xp: number;
+    focusMinutes: number;
+    sessionsCompleted: number;
+    tasksCompleted: number;
+    streakDays: number;
+    achievementsUnlocked: number;
+    battlesWon: number;
+}): Rank {
     let current = RANKS[0];
     for (const rank of RANKS) {
-        if (xp >= rank.xpRequired) {
+        if (meetsRankRequirements(rank, stats)) {
             current = rank;
         } else {
             break;
@@ -78,19 +245,134 @@ export function getRankForXP(xp: number): Rank {
 }
 
 /**
- * Get next rank info (or null if max rank)
+ * Legacy compatibility: Get rank by XP only (for simple lookups)
+ */
+export function getRankForXP(xp: number): Rank {
+    let current = RANKS[0];
+    for (const rank of RANKS) {
+        if (xp >= rank.requirements.xpRequired) {
+            current = rank;
+        } else {
+            break;
+        }
+    }
+    return current;
+}
+
+/**
+ * Get next rank info with per-requirement progress
  */
 export function getNextRank(xp: number): { rank: Rank; xpNeeded: number; progress: number } | null {
     const currentRank = getRankForXP(xp);
     const nextIndex = RANKS.findIndex(r => r.level === currentRank.level + 1);
-    if (nextIndex === -1) return null; // Max rank
+    if (nextIndex === -1) return null;
 
     const nextRank = RANKS[nextIndex];
-    const xpNeeded = nextRank.xpRequired - xp;
-    const totalRange = nextRank.xpRequired - currentRank.xpRequired;
-    const progress = totalRange > 0 ? Math.min((xp - currentRank.xpRequired) / totalRange, 1) : 1;
+    const xpNeeded = nextRank.requirements.xpRequired - xp;
+    const totalRange = nextRank.requirements.xpRequired - currentRank.requirements.xpRequired;
+    const progress = totalRange > 0 ? Math.min((xp - currentRank.requirements.xpRequired) / totalRange, 1) : 1;
 
     return { rank: nextRank, xpNeeded, progress };
+}
+
+/**
+ * Get detailed progress toward next rank (all requirements)
+ */
+export function getNextRankProgress(stats: {
+    xp: number;
+    focusMinutes: number;
+    sessionsCompleted: number;
+    tasksCompleted: number;
+    streakDays: number;
+    achievementsUnlocked: number;
+    battlesWon: number;
+}): {
+    nextRank: Rank;
+    requirements: { label: string; current: number; required: number; met: boolean; icon: string }[];
+    overallProgress: number;
+} | null {
+    const currentRank = getRankForStats(stats);
+    const nextIndex = RANKS.findIndex(r => r.level === currentRank.level + 1);
+    if (nextIndex === -1) return null;
+
+    const nextRank = RANKS[nextIndex];
+    const req = nextRank.requirements;
+
+    const requirements: { label: string; current: number; required: number; met: boolean; icon: string }[] = [];
+
+    // Always show XP
+    requirements.push({
+        label: 'Total XP',
+        current: stats.xp,
+        required: req.xpRequired,
+        met: stats.xp >= req.xpRequired,
+        icon: '⚡',
+    });
+
+    if (req.focusMinutes) {
+        requirements.push({
+            label: 'Focus Time',
+            current: stats.focusMinutes,
+            required: req.focusMinutes,
+            met: stats.focusMinutes >= req.focusMinutes,
+            icon: '⏱️',
+        });
+    }
+
+    if (req.sessionsCompleted) {
+        requirements.push({
+            label: 'Sessions',
+            current: stats.sessionsCompleted,
+            required: req.sessionsCompleted,
+            met: stats.sessionsCompleted >= req.sessionsCompleted,
+            icon: '🎯',
+        });
+    }
+
+    if (req.tasksCompleted) {
+        requirements.push({
+            label: 'Tasks Done',
+            current: stats.tasksCompleted,
+            required: req.tasksCompleted,
+            met: stats.tasksCompleted >= req.tasksCompleted,
+            icon: '✅',
+        });
+    }
+
+    if (req.streakDays) {
+        requirements.push({
+            label: 'Streak Days',
+            current: stats.streakDays,
+            required: req.streakDays,
+            met: stats.streakDays >= req.streakDays,
+            icon: '🔥',
+        });
+    }
+
+    if (req.achievementsUnlocked) {
+        requirements.push({
+            label: 'Achievements',
+            current: stats.achievementsUnlocked,
+            required: req.achievementsUnlocked,
+            met: stats.achievementsUnlocked >= req.achievementsUnlocked,
+            icon: '🏆',
+        });
+    }
+
+    if (req.battlesWon) {
+        requirements.push({
+            label: 'Battles Won',
+            current: stats.battlesWon,
+            required: req.battlesWon,
+            met: stats.battlesWon >= req.battlesWon,
+            icon: '⚔️',
+        });
+    }
+
+    const metCount = requirements.filter(r => r.met).length;
+    const overallProgress = requirements.length > 0 ? metCount / requirements.length : 0;
+
+    return { nextRank, requirements, overallProgress };
 }
 
 /**

@@ -26,7 +26,7 @@ import { usePointsStore } from '@/store/pointsStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useShopStore } from '@/store/shopStore';
 import { useAuthStore } from '@/store/authStore';
-import { getRankForXP, getNextRank, RANKS, getStreakBadge } from '@/data/ranks';
+import { getRankForXP, getRankForStats, getNextRank, getNextRankProgress, RANKS, getStreakBadge } from '@/data/ranks';
 import { ALL_ACHIEVEMENTS } from '@/data/achievements';
 import RankBadge from '@/components/RankBadge';
 
@@ -58,8 +58,19 @@ export default function AccountScreen() {
     const shopStore = useShopStore();
     const { user, logout } = useAuthStore();
 
-    const currentRank = getRankForXP(pointsStore.totalPointsEarned);
+    const rankStats = useMemo(() => ({
+        xp: pointsStore.totalPointsEarned,
+        focusMinutes: pointsStore.totalFocusMinutes,
+        sessionsCompleted: pointsStore.totalSessionsCompleted,
+        tasksCompleted: pointsStore.totalTasksCompleted,
+        streakDays: pointsStore.longestStreak,
+        achievementsUnlocked: pointsStore.achievements.filter(a => a.unlockedAt).length,
+        battlesWon: 0,
+    }), [pointsStore]);
+
+    const currentRank = getRankForStats(rankStats);
     const nextRankInfo = getNextRank(pointsStore.totalPointsEarned);
+    const nextRankProgress = getNextRankProgress(rankStats);
     const streakBadge = getStreakBadge(pointsStore.currentStreak);
     const balance = shopStore.getSpendableBalance();
 
@@ -206,24 +217,64 @@ export default function AccountScreen() {
 
                 {/* ========== XP & RANK ========== */}
                 <NeoSection title="⚡ XP & RANK" color={currentRank.color} delay={100}>
+                    {/* Current Rank Display */}
                     <View style={s.xpRow}>
-                        <Text style={s.xpLabel}>Level {currentRank.level}</Text>
+                        <Text style={s.xpLabel}>Level {currentRank.level} — {currentRank.badge} {currentRank.title}</Text>
                         <Text style={[s.xpValue, { color: currentRank.color }]}>{pointsStore.totalPointsEarned.toLocaleString()} XP</Text>
                     </View>
-                    {nextRankInfo ? (
+                    {currentRank.description ? (
+                        <Text style={s.rankFlavorText}>"{currentRank.description}"</Text>
+                    ) : null}
+
+                    {/* Next Rank Requirements Checklist */}
+                    {nextRankProgress ? (
                         <>
-                            <View style={s.progressBg}>
-                                <View style={[s.progressFill, { width: `${Math.max(nextRankInfo.progress * 100, 2)}%`, backgroundColor: currentRank.color }]} />
-                            </View>
-                            <Text style={s.nextRankText}>
-                                Next: {nextRankInfo.rank.badge} {nextRankInfo.rank.title} — {nextRankInfo.xpNeeded.toLocaleString()} XP to go
+                            <Text style={s.subHeader}>
+                                NEXT: {nextRankProgress.nextRank.badge} {nextRankProgress.nextRank.title}
+                            </Text>
+                            {nextRankProgress.nextRank.description ? (
+                                <Text style={s.rankFlavorTextSmall}>"{nextRankProgress.nextRank.description}"</Text>
+                            ) : null}
+                            {nextRankProgress.requirements.map((req, idx) => {
+                                const pct = Math.min(req.current / req.required, 1);
+                                const displayCurrent = req.label === 'Focus Time'
+                                    ? formatMinutes(req.current)
+                                    : req.current.toLocaleString();
+                                const displayRequired = req.label === 'Focus Time'
+                                    ? formatMinutes(req.required)
+                                    : req.required.toLocaleString();
+                                return (
+                                    <View key={idx} style={s.reqRow}>
+                                        <Text style={s.reqIcon}>{req.met ? '✅' : req.icon}</Text>
+                                        <View style={s.reqContent}>
+                                            <View style={s.reqLabelRow}>
+                                                <Text style={[s.reqLabel, req.met && { color: '#4CAF50' }]}>{req.label}</Text>
+                                                <Text style={[s.reqProgress, req.met && { color: '#4CAF50' }]}>
+                                                    {displayCurrent} / {displayRequired}
+                                                </Text>
+                                            </View>
+                                            <View style={s.progressBg}>
+                                                <View style={[
+                                                    s.progressFill,
+                                                    {
+                                                        width: `${Math.max(pct * 100, 2)}%`,
+                                                        backgroundColor: req.met ? '#4CAF50' : currentRank.color,
+                                                    }
+                                                ]} />
+                                            </View>
+                                        </View>
+                                    </View>
+                                );
+                            })}
+                            <Text style={s.overallProgressText}>
+                                {nextRankProgress.requirements.filter(r => r.met).length}/{nextRankProgress.requirements.length} requirements met
                             </Text>
                         </>
                     ) : (
                         <Text style={[s.nextRankText, { color: '#FFD700', fontWeight: '900' }]}>⚡ MAX RANK ACHIEVED</Text>
                     )}
 
-                    {/* All Ranks Timeline */}
+                    {/* All 10 Ranks Timeline */}
                     <Text style={s.subHeader}>ALL RANKS</Text>
                     <View style={s.ranksGrid}>
                         {RANKS.map((rank) => {
@@ -466,6 +517,15 @@ const s = StyleSheet.create({
     progressBg: { height: 10, backgroundColor: '#E0E0E0', borderWidth: 2, borderColor: '#000', marginBottom: 6, overflow: 'hidden' },
     progressFill: { height: '100%' },
     nextRankText: { fontSize: 11, fontWeight: '700', color: '#666', textAlign: 'center' },
+    rankFlavorText: { fontSize: 12, fontWeight: '600', color: '#888', fontStyle: 'italic', marginBottom: 10, textAlign: 'center' },
+    rankFlavorTextSmall: { fontSize: 10, fontWeight: '500', color: '#999', fontStyle: 'italic', marginBottom: 8 },
+    reqRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+    reqIcon: { fontSize: 18, width: 26, textAlign: 'center' },
+    reqContent: { flex: 1 },
+    reqLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 },
+    reqLabel: { fontSize: 12, fontWeight: '800', color: '#000', letterSpacing: 0.5 },
+    reqProgress: { fontSize: 11, fontWeight: '700', color: '#666', fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }) },
+    overallProgressText: { fontSize: 11, fontWeight: '900', color: '#888', textAlign: 'center', marginTop: 4, letterSpacing: 1 },
 
     // Ranks Grid
     ranksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
