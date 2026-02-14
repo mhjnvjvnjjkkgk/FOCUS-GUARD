@@ -549,7 +549,137 @@ function MemoryTask({ pairs, onComplete }: MemoryTaskProps) {
     );
 }
 
-// ... imports ...
+// Walk/Step Task Component (Pedometer-based)
+import { Pedometer } from 'expo-sensors';
+
+interface WalkTaskProps {
+    targetSteps: number;
+    onComplete: () => void;
+}
+
+function WalkTask({ targetSteps, onComplete }: WalkTaskProps) {
+    const [steps, setSteps] = useState(0);
+    const [isPedometerAvailable, setIsPedometerAvailable] = useState(false);
+    const progress = Math.min(steps / targetSteps, 1);
+
+    useEffect(() => {
+        let subscription: any = null;
+
+        const subscribe = async () => {
+            const available = await Pedometer.isAvailableAsync();
+            setIsPedometerAvailable(available);
+
+            if (available) {
+                subscription = Pedometer.watchStepCount(result => {
+                    setSteps(result.steps);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+                    if (result.steps >= targetSteps) {
+                        onComplete();
+                    }
+                });
+            }
+        };
+
+        subscribe();
+        return () => {
+            if (subscription) subscription.remove();
+        };
+    }, [targetSteps, onComplete]);
+
+    // Fallback tap for simulators/devices without pedometer
+    const handleManualStep = () => {
+        if (isPedometerAvailable) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setSteps(prev => {
+            const newSteps = prev + 1;
+            if (newSteps >= targetSteps) onComplete();
+            return newSteps;
+        });
+    };
+
+    return (
+        <View style={styles.taskContainer}>
+            <Text style={styles.taskTitle}>👣 Walk to Dismiss</Text>
+            <Text style={styles.taskSubtitle}>Take {targetSteps} steps to wake up</Text>
+
+            <View style={styles.progressCircle}>
+                <View style={[styles.progressFill, { height: `${progress * 100}%`, backgroundColor: '#4ECDC4' }]} />
+                <Text style={styles.progressText}>{steps}/{targetSteps}</Text>
+            </View>
+
+            <Text style={styles.timerText}>
+                {isPedometerAvailable ? 'Start walking!' : 'Pedometer unavailable — tap below'}
+            </Text>
+
+            {!isPedometerAvailable && (
+                <Pressable style={styles.shakeButton} onPress={handleManualStep}>
+                    <Text style={styles.shakeButtonText}>TAP TO STEP</Text>
+                </Pressable>
+            )}
+        </View>
+    );
+}
+
+// Squat Task Component (Accelerometer Y-axis detection)
+interface SquatTaskProps {
+    count: number;
+    difficulty: string;
+    onComplete: () => void;
+}
+
+function SquatTask({ count, difficulty, onComplete }: SquatTaskProps) {
+    const [squatCount, setSquatCount] = useState(0);
+    const [phase, setPhase] = useState<'standing' | 'down'>('standing');
+    const progress = Math.min(squatCount / count, 1);
+
+    // Thresholds based on difficulty
+    const DOWN_THRESHOLD = difficulty === 'hard' ? -0.3 : difficulty === 'medium' ? -0.2 : -0.1;
+    const UP_THRESHOLD = difficulty === 'hard' ? 0.3 : difficulty === 'medium' ? 0.2 : 0.1;
+
+    useEffect(() => {
+        Accelerometer.setUpdateInterval(100);
+
+        const subscription = Accelerometer.addListener(data => {
+            const { y } = data;
+
+            if (phase === 'standing' && y < DOWN_THRESHOLD) {
+                setPhase('down');
+            } else if (phase === 'down' && y > UP_THRESHOLD) {
+                setPhase('standing');
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                setSquatCount(prev => {
+                    const newCount = prev + 1;
+                    if (newCount >= count) onComplete();
+                    return newCount;
+                });
+            }
+        });
+
+        return () => subscription.remove();
+    }, [phase, count, difficulty, onComplete]);
+
+    return (
+        <View style={styles.taskContainer}>
+            <Text style={styles.taskTitle}>🏋️ Squat to Dismiss</Text>
+            <Text style={styles.taskSubtitle}>
+                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} • {count} squats required
+            </Text>
+
+            <View style={styles.progressCircle}>
+                <View style={[styles.progressFill, { height: `${progress * 100}%`, backgroundColor: '#FF6B6B' }]} />
+                <Text style={styles.progressText}>{squatCount}/{count}</Text>
+            </View>
+
+            <Text style={styles.timerText}>
+                {phase === 'standing' ? '⬇️ Squat down!' : '⬆️ Stand back up!'}
+            </Text>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 8 }}>
+                Hold phone against your chest
+            </Text>
+        </View>
+    );
+}
 
 export default function AlarmRingingScreen() {
     const params = useLocalSearchParams<{ id: string }>();
@@ -639,6 +769,18 @@ export default function AlarmRingingScreen() {
                 if (pairs >= 5) return 3;
                 if (pairs >= 4) return 2;
                 return 1;
+            case 'walk':
+            case 'step':
+                const stepTarget = task.walkSteps || task.stepTarget || 20;
+                if (stepTarget >= 50) return 3;
+                if (stepTarget >= 30) return 2;
+                return 1;
+            case 'squat':
+                if (task.squatDifficulty === 'hard') return 3;
+                if (task.squatDifficulty === 'medium') return 2;
+                return 1;
+            case 'breathing': return 1; // Relaxation, not difficulty-based
+            case 'typing': return 1;
             default: return 1;
         }
     };
@@ -672,6 +814,9 @@ export default function AlarmRingingScreen() {
             case 'breathing': return <BreathingTask cycles={alarm.dismissTask.breathingCycles || 3} inhale={alarm.dismissTask.breathingInhale || 4} hold={alarm.dismissTask.breathingHold || 4} exhale={alarm.dismissTask.breathingExhale || 4} onComplete={completeDismiss} />;
             case 'typing': return <TypingTask text={alarm.dismissTask.typingText || 'I am awake'} onComplete={completeDismiss} />;
             case 'memory': return <MemoryTask pairs={alarm.dismissTask.memoryPairs || 4} onComplete={completeDismiss} />;
+            case 'walk': return <WalkTask targetSteps={alarm.dismissTask.walkSteps || 20} onComplete={completeDismiss} />;
+            case 'step': return <WalkTask targetSteps={alarm.dismissTask.stepTarget || 30} onComplete={completeDismiss} />;
+            case 'squat': return <SquatTask count={alarm.dismissTask.squatCount || 10} difficulty={alarm.dismissTask.squatDifficulty || 'medium'} onComplete={completeDismiss} />;
             default: return <Pressable onPress={completeDismiss}><Text style={{ color: '#FFF' }}>Unknown Task - Tap to Dismiss</Text></Pressable>;
         }
     };

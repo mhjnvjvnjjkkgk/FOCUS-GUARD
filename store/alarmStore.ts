@@ -9,7 +9,7 @@ import { auth, db } from '@/configs/firebaseConfig';
 
 // Types
 export interface DismissTask {
-    type: 'none' | 'math' | 'shake' | 'scan' | 'typing' | 'walk' | 'breathing' | 'puzzle' | 'qr' | 'memory';
+    type: 'none' | 'math' | 'shake' | 'scan' | 'typing' | 'walk' | 'breathing' | 'puzzle' | 'qr' | 'memory' | 'squat' | 'step';
     // Math config
     mathDifficulty?: 'easy' | 'medium' | 'hard' | 'extreme';
     mathCount?: number;
@@ -37,6 +37,11 @@ export interface DismissTask {
     qrData?: string;
     // Memory config
     memoryPairs?: number;
+    // Squat config
+    squatCount?: number;
+    squatDifficulty?: 'easy' | 'medium' | 'hard';
+    // Step config
+    stepTarget?: number;
 }
 
 export interface Alarm {

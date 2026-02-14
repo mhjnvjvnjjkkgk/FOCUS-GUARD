@@ -95,9 +95,9 @@ export default function CreateAlarmScreen() {
             setSnoozeLimit(alarmToEdit.snoozeLimit);
 
             // Dismiss
-            setChallengeType(alarmToEdit.dismissTask.type);
-            setDifficulty(alarmToEdit.dismissTask.mathDifficulty || 'medium');
-            setProblemCount(alarmToEdit.dismissTask.mathCount || 3);
+            setChallengeType(alarmToEdit.dismissTask?.type || 'math');
+            setDifficulty(alarmToEdit.dismissTask?.mathDifficulty || 'medium');
+            setProblemCount(alarmToEdit.dismissTask?.mathCount || 3);
         }
     }, [alarmToEdit]);
 
@@ -194,6 +194,10 @@ export default function CreateAlarmScreen() {
                 shakeIntensity: 'medium',
                 shakeDuration: 15,
                 walkSteps: 20,
+                memoryPairs: difficulty === 'extreme' ? 6 : difficulty === 'hard' ? 5 : difficulty === 'medium' ? 4 : 3,
+                squatCount: difficulty === 'extreme' ? 20 : difficulty === 'hard' ? 15 : difficulty === 'medium' ? 10 : 5,
+                squatDifficulty: difficulty as any,
+                stepTarget: difficulty === 'extreme' ? 60 : difficulty === 'hard' ? 50 : difficulty === 'medium' ? 30 : 15,
             } as any,
         };
 
@@ -219,6 +223,7 @@ export default function CreateAlarmScreen() {
         { label: 'Easy', value: 'easy', icon: '🟢' },
         { label: 'Medium', value: 'medium', icon: '🟡' },
         { label: 'Hard', value: 'hard', icon: '🔴' },
+        { label: 'Extreme', value: 'extreme', icon: '💀' },
     ];
 
     const CHALLENGE_OPTIONS = [
