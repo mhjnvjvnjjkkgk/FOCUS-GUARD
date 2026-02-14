@@ -71,6 +71,8 @@ function generateMathProblem(difficulty: string): { question: string; answer: nu
     }
 }
 
+import { Accelerometer } from 'expo-sensors';
+
 // Shake Detection Component
 interface ShakeTaskProps {
     intensity: string;
@@ -80,39 +82,50 @@ interface ShakeTaskProps {
 
 function ShakeTask({ intensity, duration, onComplete }: ShakeTaskProps) {
     const [shakeCount, setShakeCount] = useState(0);
-    const [timeRemaining, setTimeRemaining] = useState(duration);
-    const targetShakes = intensity === 'light' ? 20 : intensity === 'medium' ? 40 : 60;
+    const targetShakes = intensity === 'light' ? 15 : intensity === 'medium' ? 30 : 50;
     const progress = Math.min(shakeCount / targetShakes, 1);
 
-    // Simulated shake detection (in real app, use expo-sensors)
+    // Shake Config
+    const SHAKE_THRESHOLD = intensity === 'light' ? 1.2 : intensity === 'medium' ? 1.5 : 2.0;
+    const MIN_TIME_BETWEEN_SHAKES = 500; // ms to prevent double counting
+    const [lastShakeTime, setLastShakeTime] = useState(0);
+
     useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeRemaining(t => {
-                if (t <= 1) {
-                    clearInterval(timer);
-                    if (shakeCount >= targetShakes) {
-                        onComplete();
-                    }
-                    return 0;
+        let lastX = 0, lastY = 0, lastZ = 0;
+        let lastUpdate = 0;
+
+        Accelerometer.setUpdateInterval(100);
+
+        const subscription = Accelerometer.addListener(data => {
+            const { x, y, z } = data;
+            const currTime = Date.now();
+
+            // Simple shake detection logic
+            const totalForce = Math.abs(x + y + z);
+            const lastForce = Math.abs(lastX + lastY + lastZ);
+            const delta = Math.abs(totalForce - lastForce);
+
+            if (delta > SHAKE_THRESHOLD) {
+                if (currTime - lastUpdate > MIN_TIME_BETWEEN_SHAKES) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    setShakeCount(prev => {
+                        const newCount = prev + 1;
+                        if (newCount >= targetShakes) {
+                            runOnJS(onComplete)();
+                        }
+                        return newCount;
+                    });
+                    lastUpdate = currTime;
                 }
-                return t - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [shakeCount, targetShakes, onComplete]);
-
-    // Simulate shake with button press (real app uses accelerometer)
-    const handleShake = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setShakeCount(c => {
-            const newCount = c + 1;
-            if (newCount >= targetShakes) {
-                onComplete();
             }
-            return newCount;
+
+            lastX = x;
+            lastY = y;
+            lastZ = z;
         });
-    };
+
+        return () => subscription.remove();
+    }, [intensity, targetShakes, onComplete]);
 
     return (
         <View style={styles.taskContainer}>
@@ -126,12 +139,7 @@ function ShakeTask({ intensity, duration, onComplete }: ShakeTaskProps) {
                 <Text style={styles.progressText}>{shakeCount}/{targetShakes}</Text>
             </View>
 
-            <Text style={styles.timerText}>{timeRemaining}s remaining</Text>
-
-            {/* Simulated shake button for demo */}
-            <Pressable style={styles.shakeButton} onPress={handleShake}>
-                <Text style={styles.shakeButtonText}>TAP TO SHAKE (Demo)</Text>
-            </Pressable>
+            <Text style={styles.timerText}>Keep shaking to dismiss!</Text>
         </View>
     );
 }
@@ -495,7 +503,7 @@ export default function AlarmRingingScreen() {
 
     const handleDismiss = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        if (alarm?.dismissTask.type && alarm.dismissTask.type !== 'none') {
+        if (alarm?.dismissTask?.type && alarm.dismissTask.type !== 'none') {
             setShowTask(true);
             Vibration.cancel();
         } else {

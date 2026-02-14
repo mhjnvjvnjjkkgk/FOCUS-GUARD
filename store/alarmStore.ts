@@ -58,9 +58,10 @@ export interface Alarm {
     snoozeDuration: number; // minutes
     snoozeLimit: number;
     snoozesUsed: number;
+    dismissPhrase?: string;
 
     // Dismiss
-    dismissTask: DismissTask;
+    dismissTask?: DismissTask;
 
     // Meta
     createdAt: string;
