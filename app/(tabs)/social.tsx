@@ -159,7 +159,11 @@ export default function SocialScreen() {
                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/account' as any); }}
                     style={styles.avatarBtn}
                 >
-                    <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                    {user?.photoURL ? (
+                        <Image source={{ uri: user.photoURL }} style={{ width: 32, height: 32, borderRadius: 0 }} />
+                    ) : (
+                        <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                    )}
                 </Pressable>
                 <Text style={styles.headerTitle}>👥 SOCIAL</Text>
                 <Pressable

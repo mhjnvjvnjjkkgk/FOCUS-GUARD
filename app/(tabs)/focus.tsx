@@ -25,6 +25,8 @@ import { useNavigation, useLocalSearchParams, router } from 'expo-router';
 import { usePointsStore, POINTS_CONFIG } from '@/store/pointsStore';
 import { usePlannerStore } from '@/store/plannerStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAuthStore } from '@/store/authStore';
+import { Image } from 'expo-image';
 
 // NEO CONSTANTS
 const NEO_BLACK = '#000000';
@@ -482,7 +484,11 @@ export default function FocusModeScreen() {
         <View style={styles.header}>
             <Pressable onPress={() => router.push('/account' as any)}>
                 <View style={styles.avatarBox}>
-                    <Text style={styles.avatarText}>FG</Text>
+                    {useAuthStore.getState().user?.photoURL ? (
+                        <Image source={{ uri: useAuthStore.getState().user!.photoURL! }} style={{ width: '100%', height: '100%' }} />
+                    ) : (
+                        <Text style={styles.avatarText}>FG</Text>
+                    )}
                 </View>
             </Pressable>
             <View>

@@ -22,6 +22,7 @@ import { usePointsStore } from '@/store/pointsStore';
 import { useRewardsStore } from '@/store/rewardsStore';
 import { usePersonalizationStore } from '@/store/personalizationStore';
 import { usePremiumStore } from '@/store/premiumStore';
+import { useAuthStore } from '@/store/authStore';
 import { BATTLE_CATEGORIES, BattleCategory } from '@/data/bots';
 import { RANKS } from '@/data/ranks';
 import MatchmakingOverlay from '@/components/MatchmakingOverlay';
@@ -179,7 +180,11 @@ export default function BattleScreen() {
                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/account' as any); }}
                     style={styles.avatarBtn}
                 >
-                    <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                    {useAuthStore.getState().user?.photoURL ? (
+                        <Image source={{ uri: useAuthStore.getState().user!.photoURL! }} style={{ width: 32, height: 32, borderRadius: 0 }} />
+                    ) : (
+                        <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                    )}
                     {premium.isPro() && (
                         <View style={styles.premiumDot}>
                             <Text style={{ fontSize: 8 }}>{premium.isElite() ? '👑' : '💎'}</Text>

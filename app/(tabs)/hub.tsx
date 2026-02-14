@@ -15,6 +15,7 @@ import { useShopStore } from '@/store/shopStore';
 import { usePersonalizationStore } from '@/store/personalizationStore';
 import { usePremiumStore } from '@/store/premiumStore';
 import { useBattleStore } from '@/store/battleStore';
+import { useAuthStore } from '@/store/authStore';
 import RankBadge from '@/components/RankBadge';
 
 const { width } = Dimensions.get('window');
@@ -92,7 +93,11 @@ export default function HubScreen() {
                     onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/account' as any); }}
                     style={styles.avatarBtn}
                 >
-                    <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                    {useAuthStore.getState().user?.photoURL ? (
+                        <Image source={{ uri: useAuthStore.getState().user!.photoURL! }} style={{ width: 32, height: 32, borderRadius: 0 }} />
+                    ) : (
+                        <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                    )}
                 </Pressable>
                 <Text style={styles.headerTitle}>HUB</Text>
                 <View style={{ width: 40 }} />
