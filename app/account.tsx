@@ -26,9 +26,12 @@ import { usePointsStore } from '@/store/pointsStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useShopStore } from '@/store/shopStore';
 import { useAuthStore } from '@/store/authStore';
+import { usePremiumStore } from '@/store/premiumStore';
+import { useRewardsStore } from '@/store/rewardsStore';
 import { getRankForXP, getRankForStats, getNextRank, getNextRankProgress, RANKS, getStreakBadge } from '@/data/ranks';
 import { ALL_ACHIEVEMENTS } from '@/data/achievements';
 import RankBadge from '@/components/RankBadge';
+import PremiumPaywall from '@/components/PremiumPaywall';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +60,9 @@ export default function AccountScreen() {
     const settingsStore = useSettingsStore();
     const shopStore = useShopStore();
     const { user, logout } = useAuthStore();
+    const premium = usePremiumStore();
+    const rewardsStore = useRewardsStore();
+    const [showPaywall, setShowPaywall] = useState(false);
 
     const rankStats = useMemo(() => ({
         xp: pointsStore.totalPointsEarned,
@@ -188,6 +194,7 @@ export default function AccountScreen() {
                         <View style={s.profileInfo}>
                             <Text style={s.profileName} numberOfLines={1}>
                                 {settingsStore.displayName || user?.displayName?.toUpperCase() || 'FOCUSGUARD USER'}
+                                {premium.isPro() && (premium.isElite() ? ' 👑' : ' 💎')}
                             </Text>
                             <RankBadge size="small" showStreak />
                             {user?.email && (
@@ -214,6 +221,50 @@ export default function AccountScreen() {
                         </View>
                     </View>
                 </Animated.View>
+
+                {/* ========== PREMIUM SUBSCRIPTION ========== */}
+                <NeoSection title={premium.isPro() ? '💎 PRO MEMBER' : '⭐ UPGRADE TO PRO'} color={premium.isPro() ? '#4A9EFF' : '#FFD600'} delay={80}>
+                    {premium.isPro() ? (
+                        <>
+                            <View style={s.premiumStatusRow}>
+                                <Text style={s.premiumTier}>{premium.isElite() ? '👑 ELITE' : '💎 PRO'}</Text>
+                                <Text style={s.premiumActive}>ACTIVE</Text>
+                            </View>
+                            <Text style={s.premiumPerks}>✅ {premium.isElite() ? '3x' : '2x'} XP Boost · No Ads · Premium Themes</Text>
+                            <Text style={s.premiumPerks}>✅ {premium.isElite() ? '10' : '6'} Chest Slots · Streak Shield</Text>
+                        </>
+                    ) : (
+                        <>
+                            <Text style={s.premiumPitch}>Unlock 2x XP, 6 chest slots, streak shields, and premium themes</Text>
+                            <Pressable
+                                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowPaywall(true); }}
+                                style={s.premiumUpgradeBtn}
+                            >
+                                <Text style={s.premiumUpgradeBtnText}>VIEW PLANS ⭐</Text>
+                            </Pressable>
+                        </>
+                    )}
+                </NeoSection>
+
+                {/* ========== REWARDS STATS ========== */}
+                <NeoSection title="🎁 REWARDS" color="#FF9800" delay={90}>
+                    <View style={s.quickStats}>
+                        <View style={s.quickStat}>
+                            <Text style={s.quickStatValue}>{rewardsStore.focusStreak}</Text>
+                            <Text style={s.quickStatLabel}>STREAK 🔥</Text>
+                        </View>
+                        <View style={[s.quickStatDivider, { backgroundColor: '#FF9800' }]} />
+                        <View style={s.quickStat}>
+                            <Text style={s.quickStatValue}>{rewardsStore.totalChestsOpened}</Text>
+                            <Text style={s.quickStatLabel}>CHESTS 📦</Text>
+                        </View>
+                        <View style={[s.quickStatDivider, { backgroundColor: '#FF9800' }]} />
+                        <View style={s.quickStat}>
+                            <Text style={s.quickStatValue}>{rewardsStore.totalSpins}</Text>
+                            <Text style={s.quickStatLabel}>SPINS 🎰</Text>
+                        </View>
+                    </View>
+                </NeoSection>
 
                 {/* ========== XP & RANK ========== */}
                 <NeoSection title="⚡ XP & RANK" color={currentRank.color} delay={100}>
@@ -460,6 +511,13 @@ export default function AccountScreen() {
                 </Animated.View>
 
             </ScrollView>
+
+            {/* Premium Paywall */}
+            <PremiumPaywall
+                visible={showPaywall}
+                onClose={() => setShowPaywall(false)}
+                trigger="account"
+            />
         </View>
     );
 }
@@ -606,4 +664,17 @@ const s = StyleSheet.create({
     footer: { alignItems: 'center', paddingVertical: 24 },
     footerTitle: { fontSize: 18, fontWeight: '900', color: '#000' },
     footerSub: { fontSize: 10, fontWeight: '600', color: '#bbb', marginTop: 4, fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }) },
+
+    // Premium
+    premiumStatusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    premiumTier: { fontSize: 16, fontWeight: '900', color: '#000', letterSpacing: 2 },
+    premiumActive: { fontSize: 10, fontWeight: '900', color: '#4CAF50', backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: '#4CAF50' },
+    premiumPerks: { fontSize: 11, fontWeight: '700', color: '#666', marginBottom: 4, lineHeight: 18 },
+    premiumPitch: { fontSize: 12, fontWeight: '700', color: '#666', marginBottom: 12, lineHeight: 18 },
+    premiumUpgradeBtn: {
+        backgroundColor: '#FFD600', paddingVertical: 12, alignItems: 'center',
+        borderWidth: NEO.border, borderColor: '#000',
+        shadowColor: '#000', shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0,
+    },
+    premiumUpgradeBtnText: { fontSize: 14, fontWeight: '900', color: '#000', letterSpacing: 2 },
 });
