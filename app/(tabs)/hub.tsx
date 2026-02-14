@@ -96,7 +96,7 @@ export default function HubScreen() {
                     {useAuthStore.getState().user?.photoURL ? (
                         <Image source={{ uri: useAuthStore.getState().user!.photoURL! }} style={{ width: 32, height: 32, borderRadius: 0 }} />
                     ) : (
-                        <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                        <Ionicons name="person-circle" size={32} color="#000" />
                     )}
                 </Pressable>
                 <Text style={styles.headerTitle}>HUB</Text>

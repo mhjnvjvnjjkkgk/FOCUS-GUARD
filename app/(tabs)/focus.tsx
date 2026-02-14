@@ -1270,27 +1270,6 @@ const styles = StyleSheet.create({
     ratingBtnTextSelected: {
         color: NEO_WHITE,
     },
-    warningStripe: {
-        width: '110%',
-        backgroundColor: NEO_YELLOW,
-        borderWidth: 4,
-        borderColor: NEO_BLACK,
-        padding: 8,
-        marginTop: -20,
-        marginBottom: 16,
-        marginLeft: -20,
-        marginRight: -20,
-        shadowColor: NEO_BLACK,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-    },
-    warningStripeText: {
-        fontSize: 14,
-        fontWeight: '900',
-        textAlign: 'center',
-        letterSpacing: 2,
-    },
     completionSection: {
         width: '100%',
         marginTop: 16,
