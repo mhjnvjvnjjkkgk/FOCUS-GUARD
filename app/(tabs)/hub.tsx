@@ -12,6 +12,9 @@ import { Image } from 'expo-image';
 
 import { usePointsStore } from '@/store/pointsStore';
 import { useShopStore } from '@/store/shopStore';
+import { usePersonalizationStore } from '@/store/personalizationStore';
+import { usePremiumStore } from '@/store/premiumStore';
+import { useBattleStore } from '@/store/battleStore';
 import RankBadge from '@/components/RankBadge';
 
 const { width } = Dimensions.get('window');
@@ -61,13 +64,25 @@ function HubCard({ title, subtitle, icon, color, stat, statLabel, onPress, delay
 export default function HubScreen() {
     const pointsStore = usePointsStore();
     const shopStore = useShopStore();
+    const personalization = usePersonalizationStore();
+    const premium = usePremiumStore();
+    const battleStore = useBattleStore();
     const balance = shopStore.getSpendableBalance();
+    const stats = battleStore.getStats();
 
     const formatMinutes = (mins: number) => {
         if (mins < 60) return `${mins}m`;
         const h = Math.floor(mins / 60);
         return `${h}h`;
     };
+
+    // Personalized content
+    const greeting = personalization.getGreeting(
+        '', 0, stats.streak, stats.wins + stats.losses + stats.ties,
+        pointsStore.totalFocusMinutes, ''
+    );
+    const insight = personalization.getWeeklyInsight();
+    const quote = personalization.getMotivationalQuote();
 
     return (
         <View style={styles.container}>
@@ -84,6 +99,23 @@ export default function HubScreen() {
             </Animated.View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Personalized Greeting */}
+                <Animated.View entering={FadeInDown.delay(30).springify()} style={styles.greetingCard}>
+                    <Text style={styles.greetingEmoji}>{greeting.emoji}</Text>
+                    <Text style={styles.greetingText}>{greeting.greeting}</Text>
+                    <Text style={styles.greetingSubtext}>{greeting.subtitle}</Text>
+                </Animated.View>
+
+                {/* Weekly Insight (Spotify Wrapped-style) */}
+                <Animated.View entering={FadeInDown.delay(60).springify()} style={[
+                    styles.insightCard,
+                    { borderColor: insight.trend === 'up' ? '#4CAF50' : insight.trend === 'down' ? '#FF4444' : '#4A9EFF' }
+                ]}>
+                    <Text style={styles.insightEmoji}>{insight.emoji}</Text>
+                    <Text style={styles.insightHeadline}>{insight.headline}</Text>
+                    <Text style={styles.insightDetail}>{insight.detail}</Text>
+                </Animated.View>
+
                 {/* Quick Rank Badge */}
                 <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.rankRow}>
                     <RankBadge size="medium" showStreak />
@@ -144,6 +176,26 @@ export default function HubScreen() {
                     delay={300}
                 />
 
+                {/* Premium Card — Upgrade touchpoint */}
+                {premium.isFree() && (
+                    <Animated.View entering={FadeInDown.delay(350).springify()} style={styles.premiumCard}>
+                        <Text style={styles.premiumCardEmoji}>⭐</Text>
+                        <Text style={styles.premiumCardTitle}>UNLOCK PRO</Text>
+                        <Text style={styles.premiumCardSub}>2x XP • 6 Chests • Premium Themes</Text>
+                        <Pressable
+                            onPress={() => router.push('/shop' as any)}
+                            style={styles.premiumCardBtn}
+                        >
+                            <Text style={styles.premiumCardBtnText}>VIEW PLANS</Text>
+                        </Pressable>
+                    </Animated.View>
+                )}
+
+                {/* Daily Quote */}
+                <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.quoteCard}>
+                    <Text style={styles.quoteText}>“{quote}”</Text>
+                </Animated.View>
+
                 <View style={{ height: 100 }} />
             </ScrollView>
         </View>
@@ -194,4 +246,46 @@ const styles = StyleSheet.create({
         fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
     },
     cardStatLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+
+    // Personalized Greeting
+    greetingCard: {
+        borderWidth: NEO.border, borderColor: '#000', padding: 16, marginBottom: 12,
+        backgroundColor: '#FFF8E1',
+        shadowColor: '#000', shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0,
+    },
+    greetingEmoji: { fontSize: 28, marginBottom: 4 },
+    greetingText: { fontSize: 18, fontWeight: '900', color: '#000', letterSpacing: 0.5 },
+    greetingSubtext: { fontSize: 12, fontWeight: '600', color: '#666', marginTop: 4 },
+
+    // Weekly Insight
+    insightCard: {
+        borderWidth: NEO.border, padding: 14, marginBottom: 12,
+        backgroundColor: '#FFF',
+        shadowColor: '#000', shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0,
+    },
+    insightEmoji: { fontSize: 24, marginBottom: 4 },
+    insightHeadline: { fontSize: 15, fontWeight: '900', color: '#000' },
+    insightDetail: { fontSize: 11, fontWeight: '600', color: '#888', marginTop: 2 },
+
+    // Premium Card
+    premiumCard: {
+        borderWidth: NEO.border, borderColor: '#FFD600', padding: 18, marginBottom: 12,
+        backgroundColor: 'rgba(255,214,0,0.08)', alignItems: 'center',
+        shadowColor: '#000', shadowOffset: { width: 3, height: 3 }, shadowOpacity: 1, shadowRadius: 0,
+    },
+    premiumCardEmoji: { fontSize: 32, marginBottom: 6 },
+    premiumCardTitle: { fontSize: 16, fontWeight: '900', color: '#000', letterSpacing: 3 },
+    premiumCardSub: { fontSize: 11, fontWeight: '700', color: '#888', marginTop: 4 },
+    premiumCardBtn: {
+        marginTop: 12, paddingVertical: 10, paddingHorizontal: 24,
+        borderWidth: 2, borderColor: '#FFD600', backgroundColor: '#FFD600',
+    },
+    premiumCardBtnText: { fontSize: 12, fontWeight: '900', color: '#000', letterSpacing: 2 },
+
+    // Daily Quote
+    quoteCard: {
+        borderWidth: 2, borderColor: '#DDD', padding: 16, marginBottom: 12,
+        backgroundColor: '#FAFAFA',
+    },
+    quoteText: { fontSize: 12, fontWeight: '600', color: '#666', fontStyle: 'italic', lineHeight: 18 },
 });

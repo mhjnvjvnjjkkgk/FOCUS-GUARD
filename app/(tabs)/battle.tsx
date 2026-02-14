@@ -20,12 +20,15 @@ import { Image } from 'expo-image';
 import { useBattleStore } from '@/store/battleStore';
 import { usePointsStore } from '@/store/pointsStore';
 import { useRewardsStore } from '@/store/rewardsStore';
+import { usePersonalizationStore } from '@/store/personalizationStore';
+import { usePremiumStore } from '@/store/premiumStore';
 import { BATTLE_CATEGORIES, BattleCategory } from '@/data/bots';
 import { RANKS } from '@/data/ranks';
 import MatchmakingOverlay from '@/components/MatchmakingOverlay';
 import ActiveBattleView from '@/components/ActiveBattleView';
 import DailyChallengesCard from '@/components/DailyChallengesCard';
 import DailyRewardsModal from '@/components/DailyRewardsModal';
+import PremiumPaywall from '@/components/PremiumPaywall';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -120,16 +123,27 @@ export default function BattleScreen() {
     const [showMatchmaking, setShowMatchmaking] = useState(false);
     const [showActiveBattle, setShowActiveBattle] = useState(false);
     const [showDailyReward, setShowDailyReward] = useState(false);
+    const [showPaywall, setShowPaywall] = useState(false);
+    const [paywallTrigger, setPaywallTrigger] = useState('');
 
     const rewardsStore = useRewardsStore();
+    const personalization = usePersonalizationStore();
+    const premium = usePremiumStore();
 
     const stats = battleStore.getStats();
     const currentRank = RANKS.find(r => r.level === pointsStore.currentLevel) || RANKS[0];
+
+    // Personalized greeting
+    const greeting = personalization.getGreeting(
+        '', stats.streak, stats.streak, stats.wins + stats.losses + stats.ties,
+        pointsStore.totalFocusMinutes, currentRank.title
+    );
 
     // Show daily reward on first visit + refresh challenges
     useEffect(() => {
         rewardsStore.refreshChallenges();
         rewardsStore.checkComebackBonus();
+        personalization.recordAppOpen();
         // Show daily reward if not claimed today
         if (!rewardsStore.dailyRewardClaimed || rewardsStore.lastLoginDate !== rewardsStore.getTodayString()) {
             setTimeout(() => setShowDailyReward(true), 500);
@@ -166,12 +180,27 @@ export default function BattleScreen() {
                     style={styles.avatarBtn}
                 >
                     <Image source={require('@/assets/images/fg-avatar.png')} style={{ width: 32, height: 32 }} />
+                    {premium.isPro() && (
+                        <View style={styles.premiumDot}>
+                            <Text style={{ fontSize: 8 }}>{premium.isElite() ? '👑' : '💎'}</Text>
+                        </View>
+                    )}
                 </Pressable>
                 <Text style={styles.headerTitle}>⚔️ BATTLE ARENA</Text>
-                <View style={{ width: 40 }} />
+                <Pressable
+                    onPress={() => { setPaywallTrigger('manual'); setShowPaywall(true); }}
+                    style={styles.proBtn}
+                >
+                    <Text style={styles.proBtnText}>{premium.isPro() ? '💎 PRO' : '⭐ GO PRO'}</Text>
+                </Pressable>
             </Animated.View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Personalized Greeting */}
+                <Animated.View entering={FadeInDown.delay(30).springify()} style={styles.greetingSection}>
+                    <Text style={styles.greetingText}>{greeting.emoji} {greeting.greeting}</Text>
+                    <Text style={styles.greetingSubtext}>{greeting.subtitle}</Text>
+                </Animated.View>
                 {/* Rank + XP Row */}
                 <Animated.View entering={FadeInDown.delay(50).springify()} style={styles.rankRow}>
                     <View style={styles.rankPill}>
@@ -324,6 +353,12 @@ export default function BattleScreen() {
                     onClose={() => setShowDailyReward(false)}
                 />
             )}
+            {/* Premium Paywall */}
+            <PremiumPaywall
+                visible={showPaywall}
+                onClose={() => setShowPaywall(false)}
+                trigger={paywallTrigger}
+            />
         </View>
     );
 }
@@ -468,4 +503,20 @@ const styles = StyleSheet.create({
         fontSize: 10, fontWeight: '700', color: '#999',
         fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
     },
+
+    // Premium & Personalization
+    premiumDot: {
+        position: 'absolute', top: -4, right: -4,
+        width: 16, height: 16, borderRadius: 8,
+        backgroundColor: '#FFD600', justifyContent: 'center', alignItems: 'center',
+        borderWidth: 1, borderColor: '#000',
+    },
+    proBtn: {
+        paddingHorizontal: 10, paddingVertical: 6,
+        borderWidth: 2, borderColor: '#FFD600', backgroundColor: 'rgba(255,214,0,0.15)',
+    },
+    proBtnText: { fontSize: 10, fontWeight: '900', color: '#FFD600', letterSpacing: 1 },
+    greetingSection: { marginBottom: 12 },
+    greetingText: { fontSize: 16, fontWeight: '900', color: '#000', letterSpacing: 0.5 },
+    greetingSubtext: { fontSize: 12, fontWeight: '600', color: '#888', marginTop: 2 },
 });
