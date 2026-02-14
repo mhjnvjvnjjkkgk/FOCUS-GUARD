@@ -3,7 +3,7 @@ import React, { useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, Pressable, Platform, Dimensions, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, Easing, runOnJS } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -200,39 +200,6 @@ export default function TabLayout() {
 
   const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25; // 25% of screen = commit swipe
 
-  const swipeGesture = Gesture.Pan()
-    .activeOffsetX([-15, 15])
-    .failOffsetY([-20, 20])
-    .onUpdate((event) => {
-      'worklet';
-      // Clamp: don't allow swiping past first/last tab
-      let clampedX = event.translationX;
-      if (currentTabIndex === 0 && clampedX > 0) clampedX = clampedX * 0.3; // Rubber-band
-      if (currentTabIndex === TAB_ORDER.length - 1 && clampedX < 0) clampedX = clampedX * 0.3;
-      translateX.value = clampedX;
-    })
-    .onEnd((event) => {
-      'worklet';
-      const { translationX: tx, velocityX } = event;
-      const shouldSwipe = Math.abs(tx) > SWIPE_THRESHOLD || Math.abs(velocityX) > 800;
-
-      if (shouldSwipe && tx < 0 && currentTabIndex < TAB_ORDER.length - 1) {
-        // Swipe left → animate off-screen then navigate
-        translateX.value = withTiming(-SCREEN_WIDTH, { duration: 200, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(navigateToTab)(currentTabIndex + 1);
-        });
-      } else if (shouldSwipe && tx > 0 && currentTabIndex > 0) {
-        // Swipe right → animate off-screen then navigate
-        translateX.value = withTiming(SCREEN_WIDTH, { duration: 200, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(navigateToTab)(currentTabIndex - 1);
-        });
-      } else {
-        // Bounce back
-        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
-      }
-    })
-    .runOnJS(false);
-
   const navigateToTab = useCallback((index: number) => {
     if (swipeCooldown.current) return;
     swipeCooldown.current = true;
@@ -243,8 +210,37 @@ export default function TabLayout() {
     setTimeout(() => {
       translateX.value = 0;
       swipeCooldown.current = false;
-    }, 100);
-  }, [currentTabIndex]);
+    }, 150);
+  }, []);
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-20, 20])
+    .onUpdate((event) => {
+      // Follow finger — clamp at edges with rubber-band
+      let clampedX = event.translationX;
+      if (currentTabIndex === 0 && clampedX > 0) clampedX = clampedX * 0.3;
+      if (currentTabIndex === TAB_ORDER.length - 1 && clampedX < 0) clampedX = clampedX * 0.3;
+      translateX.value = clampedX;
+    })
+    .onEnd((event) => {
+      const { translationX: tx, velocityX } = event;
+      const shouldSwipe = Math.abs(tx) > SWIPE_THRESHOLD || Math.abs(velocityX) > 800;
+
+      if (shouldSwipe && tx < 0 && currentTabIndex < TAB_ORDER.length - 1) {
+        // Swipe left → slide off then navigate
+        translateX.value = withTiming(-SCREEN_WIDTH, { duration: 180, easing: Easing.out(Easing.cubic) });
+        setTimeout(() => navigateToTab(currentTabIndex + 1), 180);
+      } else if (shouldSwipe && tx > 0 && currentTabIndex > 0) {
+        // Swipe right → slide off then navigate
+        translateX.value = withTiming(SCREEN_WIDTH, { duration: 180, easing: Easing.out(Easing.cubic) });
+        setTimeout(() => navigateToTab(currentTabIndex - 1), 180);
+      } else {
+        // Bounce back
+        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
+      }
+    })
+    .runOnJS(true);
 
   const animatedContentStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
