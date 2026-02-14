@@ -275,14 +275,14 @@ export default function TabLayout() {
 
   // Swipe tab navigation
   const segments = useSegments();
-  const TAB_ORDER = ['index', 'reminders', 'planner', 'focus', 'blocker', 'stats'];
+  const TAB_ORDER = ['index', 'reminders', 'focus', 'blocker', 'stats', 'planner'];
   const TAB_ROUTES: Record<string, string> = {
     'index': '/',
     'reminders': '/reminders',
-    'planner': '/planner',
     'focus': '/focus',
     'blocker': '/blocker',
     'stats': '/stats',
+    'planner': '/planner',
   };
 
   const swipeCooldown = useRef(false);
@@ -333,10 +333,10 @@ export default function TabLayout() {
           >
             <Tabs.Screen name="index" options={{ title: 'Alarms' }} />
             <Tabs.Screen name="reminders" options={{ title: 'Reminders' }} />
-            <Tabs.Screen name="planner" options={{ title: 'Planner' }} />
             <Tabs.Screen name="focus" options={{ title: 'Focus' }} />
             <Tabs.Screen name="blocker" options={{ title: 'Blocker' }} />
             <Tabs.Screen name="stats" options={{ title: 'Stats' }} />
+            <Tabs.Screen name="planner" options={{ title: 'Planner' }} />
           </Tabs>
         </View>
       </GestureDetector>
