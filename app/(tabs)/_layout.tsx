@@ -1,4 +1,4 @@
-import { Tabs, usePathname, router } from 'expo-router';
+import { Tabs, usePathname, router, useSegments } from 'expo-router';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, Pressable, Platform, Dimensions, ScrollView, TextInput, Switch, Alert, LayoutAnimation, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -274,11 +274,24 @@ export default function TabLayout() {
   );
 
   // Swipe tab navigation
-  const TAB_ROUTES = ['/', '/reminders', '/planner', '/focus', '/blocker', '/stats'];
-  const pathname = usePathname();
+  const segments = useSegments();
+  const TAB_ORDER = ['index', 'reminders', 'planner', 'focus', 'blocker', 'stats'];
+  const TAB_ROUTES: Record<string, string> = {
+    'index': '/',
+    'reminders': '/reminders',
+    'planner': '/planner',
+    'focus': '/focus',
+    'blocker': '/blocker',
+    'stats': '/stats',
+  };
+
   const swipeCooldown = useRef(false);
 
-  const currentTabIndex = TAB_ROUTES.indexOf(pathname) >= 0 ? TAB_ROUTES.indexOf(pathname) : 0;
+  // Find the current tab/screen name from segments
+  // Usually the last segment is the screen name, but for (tabs) root it might be 'index'
+  // segments might be ['(tabs)', 'reminders'] or ['(tabs)', 'index']
+  const currentTabName = segments.length > 0 ? segments[segments.length - 1] : 'index';
+  const currentTabIndex = TAB_ORDER.indexOf(currentTabName) >= 0 ? TAB_ORDER.indexOf(currentTabName) : 0;
 
   const swipeGesture = Gesture.Pan()
     .activeOffsetX([-10, 10])
@@ -287,19 +300,21 @@ export default function TabLayout() {
       if (swipeCooldown.current || sidebarOpen) return;
       const { translationX, velocityX } = event;
       if (Math.abs(translationX) > 20 && Math.abs(velocityX) > 50) {
-        if (translationX < 0 && currentTabIndex < TAB_ROUTES.length - 1) {
+        if (translationX < 0 && currentTabIndex < TAB_ORDER.length - 1) {
           // Swipe left → next tab
           swipeCooldown.current = true;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          router.navigate(TAB_ROUTES[currentTabIndex + 1] as any);
+          const nextTab = TAB_ORDER[currentTabIndex + 1];
+          router.navigate(TAB_ROUTES[nextTab] as any);
           setTimeout(() => { swipeCooldown.current = false; }, 400);
         } else if (translationX > 0 && currentTabIndex > 0) {
           // Swipe right → previous tab
           swipeCooldown.current = true;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          router.navigate(TAB_ROUTES[currentTabIndex - 1] as any);
+          const prevTab = TAB_ORDER[currentTabIndex - 1];
+          router.navigate(TAB_ROUTES[prevTab] as any);
           setTimeout(() => { swipeCooldown.current = false; }, 400);
         }
       }
